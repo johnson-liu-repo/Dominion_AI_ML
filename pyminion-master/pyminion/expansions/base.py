@@ -128,6 +128,8 @@ class Gardens(Victory):
     Worth 1VP for every 10 cards you have (round down)
 
     """
+    info = "Worth 1VP for every 10 cards you have (round down)"
+
 
     def __init__(
         self,
@@ -145,9 +147,10 @@ class Gardens(Victory):
 
 class Smithy(Action):
     """
-    + 3 cards
+    +3 cards
 
     """
+    info = "+3 cards"
 
     def __init__(
         self,
@@ -161,9 +164,10 @@ class Smithy(Action):
 
 class Village(Action):
     """
-    + 1 card, + 2 actions
+    +1 card, +2 actions
 
     """
+    info = "+1 card, +2 actions"
 
     def __init__(
         self,
@@ -181,6 +185,7 @@ class Laboratory(Action):
     +2 cards, +1 action
 
     """
+    info = "+2 cards, +1 action"
 
     def __init__(
         self,
@@ -198,6 +203,7 @@ class Market(Action):
     +1 card, +1 action, +1 money, +1 buy
 
     """
+    info = "+1 card, +1 action, +1 money, +1 buy"
 
     def __init__(
         self,
@@ -214,9 +220,10 @@ class Market(Action):
 
 class Moneylender(Action):
     """
-    You may trash a copper from your hand for + 3 money
+    You may trash a copper from your hand for +3 money
 
     """
+    info = "You may trash a copper from your hand for +3 money"
 
     def __init__(
         self,
@@ -257,6 +264,7 @@ class Cellar(Action):
     Discard any number of cards, then draw that many
 
     """
+    info = "+1 Action. Discard any number of cards, then draw that many."
 
     def __init__(
         self,
@@ -297,6 +305,7 @@ class Chapel(Action):
     Trash up to 4 cards from your hand
 
     """
+    info = "Trash up to 4 cards from your hand."
 
     def __init__(
         self,
@@ -335,6 +344,7 @@ class Workshop(Action):
     Gain a card costing up to 4 money
 
     """
+    info = "Gain a card costing up to 4 money."
 
     def __init__(
         self,
@@ -368,9 +378,10 @@ class Workshop(Action):
 
 class Festival(Action):
     """
-    + 2 actions, + 1 buy, + 2 money
+    +2 actions, +1 buy, +2 money
 
     """
+    info = "+2 actions, +1 buy, +2 money"
 
     def __init__(
         self,
@@ -391,6 +402,7 @@ class Harbinger(Action):
     Look through your discard pile. You may put a card from it onto your deck
 
     """
+    info = "+1 card, +1 action. Look through your discard pile. You may put a card from it onto your deck."
 
     def __init__(
         self,
@@ -436,6 +448,7 @@ class Vassal(Action):
     Discard the top card of your deck. If it's an action card you may play it.
 
     """
+    info = "+2 money. Discard the top card of your deck. If it's an action card you may play it."
 
     def __init__(
         self,
@@ -487,6 +500,7 @@ class Artisan(Action):
     Put a card from your hand onto your deck
 
     """
+    info = " Gain a card to your hand costing up to 5 money. Put a card from your hand onto your deck."
 
     def __init__(
         self,
@@ -541,6 +555,7 @@ class Poacher(Action):
     Discard a card per empty Supply pile
 
     """
+    info = "+1 card, +1 action, + 1 money. Discard a card per empty Supply pile."
 
     def __init__(
         self,
@@ -588,6 +603,7 @@ class CouncilRoom(Action):
     Each other player draws a card
 
     """
+    info = "+4 cards, +1 buy. Each other player draws a card."
 
     def __init__(
         self,
@@ -616,6 +632,7 @@ class Witch(Action):
     Each other player gains a curse
 
     """
+    info = "+2 cards. Each other player gains a curse."
 
     def __init__(
         self,
@@ -643,6 +660,7 @@ class Moat(Action):
     reveal this from your hand, to be unaffected by it
 
     """
+    info = "+2 cards. When another player plays an attack card, you may first reveal this from your hand, to be unaffected by it."
 
     class MoatAttackEffect(AttackEffect):
         def __init__(self, player: Player):
@@ -706,6 +724,7 @@ class Merchant(Action):
     The first time you play a Silver this turn, +1 money
 
     """
+    info = "+1 card, +1 action. The first time you play a Silver this turn, +1 money."
 
     class MoneyEffect(PlayerCardGameEffect):
         def __init__(self, player: Player):
@@ -758,6 +777,7 @@ class Bandit(Action):
     trashes a revealed treasure other than Copper, and discards the rest
 
     """
+    info = "Gain a Gold. Each other player reveals the top 2 cards of their deck, trashes a revealed treasure other than Copper, and discards the rest."
 
     def __init__(
         self,
@@ -820,6 +840,7 @@ class Bureaucrat(Action):
     their hand and puts it onto their deck (or reveals a hand with no victory cards)
 
     """
+    info = "Gain a Silver onto your deck. Each other player reveals a victory card from their hand and puts it onto their deck (or reveals a hand with no victory cards)."
 
     def __init__(
         self,
@@ -874,6 +895,7 @@ class ThroneRoom(Action):
     You may play an Action card from your hand twice
 
     """
+    info = "You may play an Action card from your hand twice."
 
     def __init__(
         self,
@@ -918,6 +940,7 @@ class Remodel(Action):
     Trash a card from your hand. Gain a card costing up to $2 more than it
 
     """
+    info = "Trash a card from your hand. Gain a card costing up to $2 more than it."
 
     def __init__(
         self,
@@ -978,6 +1001,7 @@ class Mine(Action):
     You may trash a Treasure from your hand. Gain a Treasure to your hand costing up to $3 more than it
 
     """
+    info = "You may trash a Treasure from your hand. Gain a Treasure to your hand costing up to $3 more than it."
 
     def __init__(
         self,
@@ -1044,6 +1068,7 @@ class Militia(Action):
     Each other player discards down to 3 cards in hand
 
     """
+    info = "+2 Money. Each other player discards down to 3 cards in hand."
 
     def __init__(
         self,
@@ -1091,6 +1116,7 @@ class Sentry(Action):
     Look at the top 2 cards of your deck. Trash and/or discard any number of them. Put the rest back on top in any order
 
     """
+    info = "+1 card, +1 action. Look at the top 2 cards of your deck. Trash and/or discard any number of them. Put the rest back on top in any order."
 
     def __init__(
         self,
@@ -1174,6 +1200,7 @@ class Library(Action):
     Draw until you have 7 cards in hand, skipping any Action cards you choose to; set those aside, discarding them afterwards
 
     """
+    info = "Draw until you have 7 cards in hand, skipping any Action cards you choose to; set those aside, discarding them afterwards."
 
     def __init__(
         self,
@@ -1280,3 +1307,39 @@ base_set: list[Card] = [
     witch,
     workshop,
 ]
+
+
+base_set_info = {
+    copper : Copper(),
+    silver : Silver(),
+    gold : Gold(),
+    estate : Estate(),
+    duchy : Duchy(),
+    province : Province(),
+    curse : Curse(),
+    artisan : Artisan(),
+    bandit : Bandit(),
+    bureaucrat : Bureaucrat(),
+    cellar : Cellar(),
+    chapel : Chapel(),
+    council_room : CouncilRoom(),
+    festival : Festival(),
+    gardens : Gardens(),
+    harbinger : Harbinger(),
+    laboratory : Laboratory(),
+    library : Library(),
+    market : Market(),
+    merchant : Merchant(),
+    militia : Militia(),
+    mine : Mine(),
+    moat : Moat(),
+    moneylender : Moneylender(),
+    poacher : Poacher(),
+    remodel : Remodel(),
+    sentry : Sentry(),
+    smithy : Smithy(),
+    throne_room : ThroneRoom(),
+    vassal : Vassal(),
+    village : Village(),
+    witch : Witch(),
+    workshop : Workshop() }

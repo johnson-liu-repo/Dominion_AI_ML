@@ -1,7 +1,7 @@
 import sys
 import os
 
-pyminion_dir = '/mnt/c/Users/johns/OneDrive/Desktop/projects/dominion_ai/pyminion-master'
+pyminion_dir = '/mnt/c/Users/johns/OneDrive/Desktop/projects/domAInion/pyminion-master'
 sys.path.append(pyminion_dir)
 
 from pyminion.expansions import base

@@ -10,6 +10,8 @@ from pyminion.exceptions import (InvalidBinaryInput,
                                  InvalidSingleCardInput, InvalidDeckPositionInput,
                                  InvalidEffectsOrderInput)
 from pyminion.player import Player
+from pyminion.expansions.base import base_set
+from pyminion.expansions.base import base_set_info
 
 if TYPE_CHECKING:
     from pyminion.game import Game
@@ -303,12 +305,47 @@ class HumanDecider:
         return cards
 
     @validate_input(exceptions=InvalidSingleCardInput)
+    def print_card_info(
+        self,
+    ) -> None:
+
+        card = single_card_decision(
+            prompt="Which card would you like to print info for? ... ",
+            valid_cards=base_set,
+        )
+
+        print(base_set_info[card].info)
+
+
+    @validate_input(exceptions=InvalidSingleCardInput)
     def buy_phase_decision(
         self,
         valid_cards: list[Card],
         player: "Player",
         game: "Game",
     ) -> Card|None:
+
+        print(valid_cards)
+        
+        # Ask the player if they want to print out card info.
+
+        print_info = True
+
+        while ( print_info == True ):
+            player_input = input( "Would you like to (p)rint card info or (c)ontinue with buying cards? ... " )
+
+            if ( player_input == "c" ):
+                print_info = False
+                break
+            
+            elif ( player_input == "p" ):
+                self.print_card_info()
+
+            else:
+                print( "Please choose (p)rint or (c)ontinue ... " )
+
+        print("Valid cards to buy: ... ", valid_cards)
+
         card = single_card_decision(
             prompt="Choose a card to buy: ",
             valid_cards=valid_cards,

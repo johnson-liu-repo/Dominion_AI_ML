@@ -156,6 +156,8 @@ class Card:
     def set_up(self, game: "Game") -> None:
         pass
 
+    info = ""
+
 
 class ScoreCard(Card):
     def __init__(self, name: str, cost: int|Cost, type: tuple[CardType, ...]):

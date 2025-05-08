@@ -1,7 +1,8 @@
 import sys
 import os
 
-pyminion_dir = '/mnt/c/Users/johns/OneDrive/Desktop/projects/domAInion/pyminion-master'
+# Windows-style path to the pyminion library.
+pyminion_dir = r'C:\Users\johns\OneDrive\Desktop\projects\Dominion_AI_ML\pyminion-master'
 sys.path.append(pyminion_dir)
 
 from pyminion.expansions import base
@@ -14,8 +15,7 @@ human = Human()
 bot = DummieBot()
 
 # Set up the game.
-game = Game( players = [ human, bot ], expansions = [ base.base_set ] )
-
+game = Game(players=[human, bot], expansions=[base.base_set])
 
 # Play the game.
 game.play()

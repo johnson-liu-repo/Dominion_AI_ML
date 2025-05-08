@@ -1,7 +1,8 @@
 import sys
 import os
 
-pyminion_dir = '/mnt/c/Users/johns/OneDrive/Desktop/projects/domAInion/pyminion-master'
+# Windows-style path to the pyminion library.
+pyminion_dir = r'C:\Users\johns\OneDrive\Desktop\projects\Dominion_AI_ML\pyminion-master'
 sys.path.append(pyminion_dir)
 
 from pyminion.expansions import base
@@ -11,16 +12,14 @@ from pyminion.bots.custom_bots import DummieBot
 from pyminion.simulator import Simulator
 
 
-# Initialize human and bot.
+# Initialize and bot.
 bm = BigMoney( player_id = 'Big_Money' )
 bm_smithy = BigMoneySmithy( player_id = 'Big_Money_Smithy' )
 
-bot = DummieBot()
-bot1 = DummieBot()
-bot2 = DummieBot()
+dummie_bot = DummieBot()
 
 # Set up the game.
-game = Game( players = [ bm, bm_smithy ],
+game = Game( players = [ dummie_bot, bm_smithy ],
              expansions = [ base.base_set ],
              kingdom_cards = [ base.smithy ],
              log_stdout = False,

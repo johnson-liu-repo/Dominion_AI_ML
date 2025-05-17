@@ -1308,6 +1308,22 @@ base_set: list[Card] = [
     workshop,
 ]
 
+#######################################################################
+# For testing custom bots.
+#######################################################################
+test_set: list[Card] = [
+    council_room,
+    festival,
+    gardens,
+    laboratory,
+    library,
+    market,
+    merchant,
+    smithy,
+    vassal,
+    village
+]
+#######################################################################
 
 base_set_info = {
     copper : Copper(),

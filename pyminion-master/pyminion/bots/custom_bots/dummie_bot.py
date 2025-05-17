@@ -12,11 +12,12 @@ logger = logging.getLogger()
 class DummieBotDecider(BotDecider):
     """
     Only buys Provinces, Duchies, and Estates in that order.
-    - Only possible to buy Duchies and Estates without any other directive because the maximum amount of usable
-      treasure is (5).
+    - Only possible to buy Duchies and Estates without any other directive
+    because the maximum amount of usable treasure is (5).
 
     """
 
+    # The bot has no action priority.
     def action_priority(self, player: Player, game: Game) -> Iterator[Card]:
         return iter([])
 

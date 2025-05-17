@@ -1,7 +1,7 @@
 
 # AI and ML for Dominion Bots
 
-**2025 – Present**
+**May 2025 – Present**
 
 ### __Team__
 
@@ -19,5 +19,5 @@ Email: [liujohnson.jl@gmail.com](mailto:liujohnson.jl@gmail.com)
 ## Resources Used
 
 ### Pyminion Repository
-By Evan Slack\
+By Evan\
 [https://github.com/evanofslack/pyminion](https://github.com/evanofslack/pyminion)

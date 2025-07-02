@@ -1312,16 +1312,8 @@ base_set: list[Card] = [
 # For testing custom bots.
 #######################################################################
 test_set: list[Card] = [
-    council_room,
-    festival,
     gardens,
-    laboratory,
-    library,
-    market,
-    merchant,
     smithy,
-    vassal,
-    village
 ]
 #######################################################################
 

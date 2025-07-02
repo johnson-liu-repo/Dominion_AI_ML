@@ -133,7 +133,9 @@ class Game:
         This should be 10 piles each with 10 cards.
 
         """
-        KINGDOM_PILES: int = 10
+        ### Value here is being changed for development.
+        # KINGDOM_PILES: int = 10 # <----- original value
+        KINGDOM_PILES: int = 2
 
         # All available cards from chosen expansions
         kingdom_options = [card for expansion in self.expansions for card in expansion]

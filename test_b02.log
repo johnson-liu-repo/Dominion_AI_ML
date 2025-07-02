@@ -1,0 +1,1066 @@
+Simulating 1 games...
+
+Starting Game...
+
+
+Supply:
+ (8)  $2 Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (40)  $3 Silver      (30)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+(10)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+
+dummie_bot starts with 7 Copper, 3 Estate
+dummie_bot shuffles their deck
+dummie_bot draws 3 Copper, 2 Estate
+
+Chapel_Bot starts with 7 Copper, 3 Estate
+Chapel_Bot shuffles their deck
+Chapel_Bot draws 3 Copper, 2 Estate
+
+Turn 1 - dummie_bot
+dummie_bot's hand: 3 Copper, 2 Estate
+Hand: 3 Copper, 2 Estate
+dummie_bot played Copper, Copper, Copper
+
+Supply:
+ (8)  $2 Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (40)  $3 Silver      (30)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+(10)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 3
+Buys: 1
+dummie_bot buys Estate
+dummie_bot draws 4 Copper, 1 Estate
+
+Turn 1 - Chapel_Bot
+Chapel_Bot's hand: 3 Copper, 2 Estate
+Hand: 3 Copper, 2 Estate
+Chapel_Bot played Copper, Copper, Copper
+
+Supply:
+ (7)  $2 Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (40)  $3 Silver      (30)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+(10)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 3
+Buys: 1
+Chapel_Bot buys Chapel
+Chapel_Bot draws 4 Copper, 1 Estate
+
+Turn 2 - dummie_bot
+dummie_bot's hand: 4 Copper, 1 Estate
+Hand: 4 Copper, 1 Estate
+dummie_bot played Copper, Copper, Copper, Copper
+
+Supply:
+ (7)  $2 Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (40)  $3 Silver      (30)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 4
+Buys: 1
+dummie_bot buys Estate
+dummie_bot shuffles their deck
+dummie_bot draws 3 Copper, 2 Estate
+
+Turn 2 - Chapel_Bot
+Chapel_Bot's hand: 4 Copper, 1 Estate
+Hand: 4 Copper, 1 Estate
+Chapel_Bot played Copper, Copper, Copper, Copper
+
+Supply:
+ (6)  $2 Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (40)  $3 Silver      (30)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 4
+Buys: 1
+Chapel_Bot buys Silver
+Chapel_Bot shuffles their deck
+Chapel_Bot draws 2 Estate, 3 Copper
+
+Turn 3 - dummie_bot
+dummie_bot's hand: 3 Copper, 2 Estate
+Hand: 3 Copper, 2 Estate
+dummie_bot played Copper, Copper, Copper
+
+Supply:
+ (6)  $2 Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (39)  $3 Silver      (30)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 3
+Buys: 1
+dummie_bot buys Estate
+dummie_bot draws 2 Copper, 3 Estate
+
+Turn 3 - Chapel_Bot
+Chapel_Bot's hand: 2 Estate, 3 Copper
+Hand: 2 Estate, 3 Copper
+Chapel_Bot played Copper, Copper, Copper
+
+Supply:
+ (5)  $2 Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (39)  $3 Silver      (30)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 3
+Buys: 1
+Chapel_Bot buys Silver
+Chapel_Bot draws 3 Copper, 1 Silver, 1 Chapel
+
+Turn 4 - dummie_bot
+dummie_bot's hand: 2 Copper, 3 Estate
+Hand: 2 Copper, 3 Estate
+dummie_bot played Copper, Copper
+
+Supply:
+ (5)  $2 Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (38)  $3 Silver      (30)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 2
+Buys: 1
+dummie_bot buys Estate
+dummie_bot shuffles their deck
+dummie_bot draws 3 Copper, 2 Estate
+
+Turn 4 - Chapel_Bot
+Chapel_Bot's hand: 3 Copper, 1 Silver, 1 Chapel
+Chapel_Bot plays Chapel
+Chapel_Bot trashes Copper
+Chapel_Bot trashes Copper
+Chapel_Bot trashes Copper
+Hand: 1 Silver
+Chapel_Bot played Silver
+
+Supply:
+ (4)  $2 Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (38)  $3 Silver      (30)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 2
+Buys: 1
+Chapel_Bot buys nothing
+Chapel_Bot shuffles their deck
+Chapel_Bot draws 2 Copper, 2 Estate, 1 Silver
+
+Turn 5 - dummie_bot
+dummie_bot's hand: 3 Copper, 2 Estate
+Hand: 3 Copper, 2 Estate
+dummie_bot played Copper, Copper, Copper
+
+Supply:
+ (4)  $2 Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (38)  $3 Silver      (30)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 3
+Buys: 1
+dummie_bot buys Estate
+dummie_bot draws 3 Copper, 2 Estate
+
+Turn 5 - Chapel_Bot
+Chapel_Bot's hand: 2 Copper, 2 Estate, 1 Silver
+Hand: 2 Copper, 2 Estate, 1 Silver
+Chapel_Bot played Copper, Copper, Silver
+
+Supply:
+ (3)  $2 Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (38)  $3 Silver      (30)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 4
+Buys: 1
+Chapel_Bot buys Silver
+Chapel_Bot draws 2 Copper, 1 Silver, 1 Chapel, 1 Estate
+
+Turn 6 - dummie_bot
+dummie_bot's hand: 3 Copper, 2 Estate
+Hand: 3 Copper, 2 Estate
+dummie_bot played Copper, Copper, Copper
+
+Supply:
+ (3)  $2 Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (37)  $3 Silver      (30)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 3
+Buys: 1
+dummie_bot buys Estate
+dummie_bot shuffles their deck
+dummie_bot draws 1 Copper, 4 Estate
+
+Turn 6 - Chapel_Bot
+Chapel_Bot's hand: 2 Copper, 1 Silver, 1 Chapel, 1 Estate
+Chapel_Bot plays Chapel
+Chapel_Bot trashes Estate
+Chapel_Bot trashes Copper
+Chapel_Bot trashes Copper
+Hand: 1 Silver
+Chapel_Bot played Silver
+
+Supply:
+ (2)  $2 Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (37)  $3 Silver      (30)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 2
+Buys: 1
+Chapel_Bot buys nothing
+Chapel_Bot shuffles their deck
+Chapel_Bot draws 2 Copper, 1 Silver, 2 Estate
+
+Turn 7 - dummie_bot
+dummie_bot's hand: 1 Copper, 4 Estate
+Hand: 1 Copper, 4 Estate
+dummie_bot played Copper
+
+Supply:
+ (2)  $2 Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (37)  $3 Silver      (30)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 1
+Buys: 1
+dummie_bot buys nothing
+dummie_bot draws 2 Estate, 3 Copper
+
+Turn 7 - Chapel_Bot
+Chapel_Bot's hand: 2 Copper, 1 Silver, 2 Estate
+Hand: 2 Copper, 1 Silver, 2 Estate
+Chapel_Bot played Copper, Silver, Copper
+
+Supply:
+ (2)  $2 Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (37)  $3 Silver      (30)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 4
+Buys: 1
+Chapel_Bot buys Silver
+Chapel_Bot shuffles their deck
+Chapel_Bot draws 2 Silver, 1 Chapel, 1 Copper, 1 Estate
+
+Turn 8 - dummie_bot
+dummie_bot's hand: 2 Estate, 3 Copper
+Hand: 2 Estate, 3 Copper
+dummie_bot played Copper, Copper, Copper
+
+Supply:
+ (2)  $2 Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (36)  $3 Silver      (30)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 3
+Buys: 1
+dummie_bot buys Estate
+dummie_bot draws 3 Copper, 2 Estate
+
+Turn 8 - Chapel_Bot
+Chapel_Bot's hand: 2 Silver, 1 Chapel, 1 Copper, 1 Estate
+Chapel_Bot plays Chapel
+Chapel_Bot trashes Estate
+Chapel_Bot trashes Copper
+Hand: 2 Silver
+Chapel_Bot played Silver, Silver
+
+Supply:
+ (1)  $2 Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (36)  $3 Silver      (30)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 4
+Buys: 1
+Chapel_Bot buys Silver
+Chapel_Bot shuffles their deck
+Chapel_Bot draws 1 Copper, 1 Estate, 3 Silver
+
+Turn 9 - dummie_bot
+dummie_bot's hand: 3 Copper, 2 Estate
+Hand: 3 Copper, 2 Estate
+dummie_bot played Copper, Copper, Copper
+
+Supply:
+ (1)  $2 Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (30)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 3
+Buys: 1
+dummie_bot buys Estate
+dummie_bot shuffles their deck
+dummie_bot draws 3 Estate, 2 Copper
+
+Turn 9 - Chapel_Bot
+Chapel_Bot's hand: 1 Copper, 1 Estate, 3 Silver
+Hand: 1 Copper, 1 Estate, 3 Silver
+Chapel_Bot played Copper, Silver, Silver, Silver
+
+Supply:
+ (0)  $- Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (30)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 7
+Buys: 1
+Chapel_Bot buys Gold
+Chapel_Bot shuffles their deck
+Chapel_Bot draws 1 Chapel, 3 Silver, 1 Copper
+
+Turn 10 - dummie_bot
+dummie_bot's hand: 3 Estate, 2 Copper
+Hand: 3 Estate, 2 Copper
+dummie_bot played Copper, Copper
+
+Supply:
+ (0)  $- Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (29)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 2
+Buys: 1
+dummie_bot buys nothing
+dummie_bot draws 3 Copper, 2 Estate
+
+Turn 10 - Chapel_Bot
+Chapel_Bot's hand: 1 Chapel, 3 Silver, 1 Copper
+Chapel_Bot plays Chapel
+Chapel_Bot trashes Copper
+Hand: 3 Silver
+Chapel_Bot played Silver, Silver, Silver
+
+Supply:
+ (0)  $- Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (29)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 6
+Buys: 1
+Chapel_Bot buys Gold
+Chapel_Bot shuffles their deck
+Chapel_Bot draws 3 Silver, 1 Estate, 1 Gold
+
+Turn 11 - dummie_bot
+dummie_bot's hand: 3 Copper, 2 Estate
+Hand: 3 Copper, 2 Estate
+dummie_bot played Copper, Copper, Copper
+
+Supply:
+ (0)  $- Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (28)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 3
+Buys: 1
+dummie_bot buys nothing
+dummie_bot draws 4 Estate, 1 Copper
+
+Turn 11 - Chapel_Bot
+Chapel_Bot's hand: 3 Silver, 1 Estate, 1 Gold
+Hand: 3 Silver, 1 Estate, 1 Gold
+Chapel_Bot played Silver, Silver, Gold, Silver
+
+Supply:
+ (0)  $- Estate       (8)  $5 Duchy        (8)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (28)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 9
+Buys: 1
+Chapel_Bot buys Province
+Chapel_Bot shuffles their deck
+Chapel_Bot draws 1 Gold, 3 Silver, 1 Chapel
+
+Turn 12 - dummie_bot
+dummie_bot's hand: 4 Estate, 1 Copper
+Hand: 4 Estate, 1 Copper
+dummie_bot played Copper
+
+Supply:
+ (0)  $- Estate       (8)  $5 Duchy        (7)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (28)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 1
+Buys: 1
+dummie_bot buys nothing
+dummie_bot shuffles their deck
+dummie_bot draws 2 Estate, 3 Copper
+
+Turn 12 - Chapel_Bot
+Chapel_Bot's hand: 1 Gold, 3 Silver, 1 Chapel
+Chapel_Bot plays Chapel
+Hand: 1 Gold, 3 Silver
+Chapel_Bot played Gold, Silver, Silver, Silver
+
+Supply:
+ (0)  $- Estate       (8)  $5 Duchy        (7)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (28)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 9
+Buys: 1
+Chapel_Bot buys Province
+Chapel_Bot draws 1 Gold, 2 Silver, 1 Province, 1 Estate
+
+Turn 13 - dummie_bot
+dummie_bot's hand: 2 Estate, 3 Copper
+Hand: 2 Estate, 3 Copper
+dummie_bot played Copper, Copper, Copper
+
+Supply:
+ (0)  $- Estate       (8)  $5 Duchy        (6)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (28)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 3
+Buys: 1
+dummie_bot buys nothing
+dummie_bot draws 4 Estate, 1 Copper
+
+Turn 13 - Chapel_Bot
+Chapel_Bot's hand: 1 Gold, 2 Silver, 1 Province, 1 Estate
+Hand: 1 Gold, 2 Silver, 1 Province, 1 Estate
+Chapel_Bot played Gold, Silver, Silver
+
+Supply:
+ (0)  $- Estate       (8)  $5 Duchy        (6)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (28)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 7
+Buys: 1
+Chapel_Bot buys Gold
+Chapel_Bot shuffles their deck
+Chapel_Bot draws 2 Silver, 1 Province, 2 Gold
+
+Turn 14 - dummie_bot
+dummie_bot's hand: 4 Estate, 1 Copper
+Hand: 4 Estate, 1 Copper
+dummie_bot played Copper
+
+Supply:
+ (0)  $- Estate       (8)  $5 Duchy        (6)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 1
+Buys: 1
+dummie_bot buys nothing
+dummie_bot draws 4 Estate, 1 Copper
+
+Turn 14 - Chapel_Bot
+Chapel_Bot's hand: 2 Silver, 1 Province, 2 Gold
+Hand: 2 Silver, 1 Province, 2 Gold
+Chapel_Bot played Silver, Gold, Silver, Gold
+
+Supply:
+ (0)  $- Estate       (8)  $5 Duchy        (6)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 10
+Buys: 1
+Chapel_Bot buys Province
+Chapel_Bot draws 1 Gold, 1 Silver, 1 Province, 1 Estate, 1 Chapel
+
+Turn 15 - dummie_bot
+dummie_bot's hand: 4 Estate, 1 Copper
+Hand: 4 Estate, 1 Copper
+dummie_bot played Copper
+
+Supply:
+ (0)  $- Estate       (8)  $5 Duchy        (5)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 1
+Buys: 1
+dummie_bot buys nothing
+dummie_bot shuffles their deck
+dummie_bot draws 2 Copper, 3 Estate
+
+Turn 15 - Chapel_Bot
+Chapel_Bot's hand: 1 Gold, 1 Silver, 1 Province, 1 Estate, 1 Chapel
+Chapel_Bot plays Chapel
+Chapel_Bot trashes Estate
+Hand: 1 Gold, 1 Silver, 1 Province
+Chapel_Bot played Gold, Silver
+
+Supply:
+ (0)  $- Estate       (8)  $5 Duchy        (5)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 5
+Buys: 1
+Chapel_Bot buys Duchy
+Chapel_Bot shuffles their deck
+Chapel_Bot draws 3 Silver, 1 Province, 1 Gold
+
+Turn 16 - dummie_bot
+dummie_bot's hand: 2 Copper, 3 Estate
+Hand: 2 Copper, 3 Estate
+dummie_bot played Copper, Copper
+
+Supply:
+ (0)  $- Estate       (7)  $5 Duchy        (5)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 2
+Buys: 1
+dummie_bot buys nothing
+dummie_bot draws 4 Estate, 1 Copper
+
+Turn 16 - Chapel_Bot
+Chapel_Bot's hand: 3 Silver, 1 Province, 1 Gold
+Hand: 3 Silver, 1 Province, 1 Gold
+Chapel_Bot played Silver, Silver, Gold, Silver
+
+Supply:
+ (0)  $- Estate       (7)  $5 Duchy        (5)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 9
+Buys: 1
+Chapel_Bot buys Province
+Chapel_Bot draws 1 Gold, 1 Silver, 2 Province, 1 Chapel
+
+Turn 17 - dummie_bot
+dummie_bot's hand: 4 Estate, 1 Copper
+Hand: 4 Estate, 1 Copper
+dummie_bot played Copper
+
+Supply:
+ (0)  $- Estate       (7)  $5 Duchy        (4)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 1
+Buys: 1
+dummie_bot buys nothing
+dummie_bot draws 4 Copper, 1 Estate
+
+Turn 17 - Chapel_Bot
+Chapel_Bot's hand: 1 Gold, 1 Silver, 2 Province, 1 Chapel
+Chapel_Bot plays Chapel
+Hand: 1 Gold, 1 Silver, 2 Province
+Chapel_Bot played Gold, Silver
+
+Supply:
+ (0)  $- Estate       (7)  $5 Duchy        (4)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 5
+Buys: 1
+Chapel_Bot buys Duchy
+Chapel_Bot shuffles their deck
+Chapel_Bot draws 2 Gold, 2 Silver, 1 Duchy
+
+Turn 18 - dummie_bot
+dummie_bot's hand: 4 Copper, 1 Estate
+Hand: 4 Copper, 1 Estate
+dummie_bot played Copper, Copper, Copper, Copper
+
+Supply:
+ (0)  $- Estate       (6)  $5 Duchy        (4)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 4
+Buys: 1
+dummie_bot buys nothing
+dummie_bot shuffles their deck
+dummie_bot draws 4 Estate, 1 Copper
+
+Turn 18 - Chapel_Bot
+Chapel_Bot's hand: 2 Gold, 2 Silver, 1 Duchy
+Hand: 2 Gold, 2 Silver, 1 Duchy
+Chapel_Bot played Gold, Silver, Gold, Silver
+
+Supply:
+ (0)  $- Estate       (6)  $5 Duchy        (4)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 10
+Buys: 1
+Chapel_Bot buys Province
+Chapel_Bot draws 1 Duchy, 1 Province, 2 Silver, 1 Gold
+
+Turn 19 - dummie_bot
+dummie_bot's hand: 4 Estate, 1 Copper
+Hand: 4 Estate, 1 Copper
+dummie_bot played Copper
+
+Supply:
+ (0)  $- Estate       (6)  $5 Duchy        (3)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 1
+Buys: 1
+dummie_bot buys nothing
+dummie_bot draws 3 Copper, 2 Estate
+
+Turn 19 - Chapel_Bot
+Chapel_Bot's hand: 1 Duchy, 1 Province, 2 Silver, 1 Gold
+Hand: 1 Duchy, 1 Province, 2 Silver, 1 Gold
+Chapel_Bot played Silver, Silver, Gold
+
+Supply:
+ (0)  $- Estate       (6)  $5 Duchy        (3)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 7
+Buys: 1
+Chapel_Bot buys Duchy
+Chapel_Bot draws 1 Chapel, 3 Province, 1 Silver
+
+Turn 20 - dummie_bot
+dummie_bot's hand: 3 Copper, 2 Estate
+Hand: 3 Copper, 2 Estate
+dummie_bot played Copper, Copper, Copper
+
+Supply:
+ (0)  $- Estate       (5)  $5 Duchy        (3)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 3
+Buys: 1
+dummie_bot buys nothing
+dummie_bot draws 3 Estate, 2 Copper
+
+Turn 20 - Chapel_Bot
+Chapel_Bot's hand: 1 Chapel, 3 Province, 1 Silver
+Chapel_Bot plays Chapel
+Hand: 3 Province, 1 Silver
+Chapel_Bot played Silver
+
+Supply:
+ (0)  $- Estate       (5)  $5 Duchy        (3)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 2
+Buys: 1
+Chapel_Bot buys nothing
+Chapel_Bot shuffles their deck
+Chapel_Bot draws 3 Silver, 1 Chapel, 1 Gold
+
+Turn 21 - dummie_bot
+dummie_bot's hand: 3 Estate, 2 Copper
+Hand: 3 Estate, 2 Copper
+dummie_bot played Copper, Copper
+
+Supply:
+ (0)  $- Estate       (5)  $5 Duchy        (3)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 2
+Buys: 1
+dummie_bot buys nothing
+dummie_bot shuffles their deck
+dummie_bot draws 1 Copper, 4 Estate
+
+Turn 21 - Chapel_Bot
+Chapel_Bot's hand: 3 Silver, 1 Chapel, 1 Gold
+Chapel_Bot plays Chapel
+Hand: 3 Silver, 1 Gold
+Chapel_Bot played Silver, Gold, Silver, Silver
+
+Supply:
+ (0)  $- Estate       (5)  $5 Duchy        (3)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 9
+Buys: 1
+Chapel_Bot buys Province
+Chapel_Bot draws 2 Gold, 2 Province, 1 Duchy
+
+Turn 22 - dummie_bot
+dummie_bot's hand: 1 Copper, 4 Estate
+Hand: 1 Copper, 4 Estate
+dummie_bot played Copper
+
+Supply:
+ (0)  $- Estate       (5)  $5 Duchy        (2)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 1
+Buys: 1
+dummie_bot buys nothing
+dummie_bot draws 4 Estate, 1 Copper
+
+Turn 22 - Chapel_Bot
+Chapel_Bot's hand: 2 Gold, 2 Province, 1 Duchy
+Hand: 2 Gold, 2 Province, 1 Duchy
+Chapel_Bot played Gold, Gold
+
+Supply:
+ (0)  $- Estate       (5)  $5 Duchy        (2)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 6
+Buys: 1
+Chapel_Bot buys Duchy
+Chapel_Bot draws 3 Province, 2 Duchy
+
+Turn 23 - dummie_bot
+dummie_bot's hand: 4 Estate, 1 Copper
+Hand: 4 Estate, 1 Copper
+dummie_bot played Copper
+
+Supply:
+ (0)  $- Estate       (4)  $5 Duchy        (2)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 1
+Buys: 1
+dummie_bot buys nothing
+dummie_bot draws 3 Copper, 2 Estate
+
+Turn 23 - Chapel_Bot
+Chapel_Bot's hand: 3 Province, 2 Duchy
+
+Supply:
+ (0)  $- Estate       (4)  $5 Duchy        (2)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 0
+Buys: 1
+Chapel_Bot buys nothing
+Chapel_Bot shuffles their deck
+Chapel_Bot draws 2 Silver, 1 Gold, 2 Duchy
+
+Turn 24 - dummie_bot
+dummie_bot's hand: 3 Copper, 2 Estate
+Hand: 3 Copper, 2 Estate
+dummie_bot played Copper, Copper, Copper
+
+Supply:
+ (0)  $- Estate       (4)  $5 Duchy        (2)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 3
+Buys: 1
+dummie_bot buys nothing
+dummie_bot shuffles their deck
+dummie_bot draws 1 Estate, 4 Copper
+
+Turn 24 - Chapel_Bot
+Chapel_Bot's hand: 2 Silver, 1 Gold, 2 Duchy
+Hand: 2 Silver, 1 Gold, 2 Duchy
+Chapel_Bot played Silver, Silver, Gold
+
+Supply:
+ (0)  $- Estate       (4)  $5 Duchy        (2)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 7
+Buys: 1
+Chapel_Bot buys Duchy
+Chapel_Bot draws 1 Chapel, 2 Silver, 2 Province
+
+Turn 25 - dummie_bot
+dummie_bot's hand: 1 Estate, 4 Copper
+Hand: 1 Estate, 4 Copper
+dummie_bot played Copper, Copper, Copper, Copper
+
+Supply:
+ (0)  $- Estate       (3)  $5 Duchy        (2)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 4
+Buys: 1
+dummie_bot buys nothing
+dummie_bot draws 5 Estate
+
+Turn 25 - Chapel_Bot
+Chapel_Bot's hand: 1 Chapel, 2 Silver, 2 Province
+Chapel_Bot plays Chapel
+Hand: 2 Silver, 2 Province
+Chapel_Bot played Silver, Silver
+
+Supply:
+ (0)  $- Estate       (3)  $5 Duchy        (2)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (35)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 4
+Buys: 1
+Chapel_Bot buys Silver
+Chapel_Bot draws 1 Duchy, 4 Province
+
+Turn 26 - dummie_bot
+dummie_bot's hand: 5 Estate
+
+Supply:
+ (0)  $- Estate       (3)  $5 Duchy        (2)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (34)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 0
+Buys: 1
+dummie_bot buys nothing
+dummie_bot draws 2 Copper, 3 Estate
+
+Turn 26 - Chapel_Bot
+Chapel_Bot's hand: 1 Duchy, 4 Province
+
+Supply:
+ (0)  $- Estate       (3)  $5 Duchy        (2)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (34)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 0
+Buys: 1
+Chapel_Bot buys nothing
+Chapel_Bot shuffles their deck
+Chapel_Bot draws 2 Gold, 2 Duchy, 1 Silver
+
+Turn 27 - dummie_bot
+dummie_bot's hand: 2 Copper, 3 Estate
+Hand: 2 Copper, 3 Estate
+dummie_bot played Copper, Copper
+
+Supply:
+ (0)  $- Estate       (3)  $5 Duchy        (2)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (34)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 2
+Buys: 1
+dummie_bot buys nothing
+dummie_bot shuffles their deck
+dummie_bot draws 4 Estate, 1 Copper
+
+Turn 27 - Chapel_Bot
+Chapel_Bot's hand: 2 Gold, 2 Duchy, 1 Silver
+Hand: 2 Gold, 2 Duchy, 1 Silver
+Chapel_Bot played Gold, Silver, Gold
+
+Supply:
+ (0)  $- Estate       (3)  $5 Duchy        (2)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (34)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 8
+Buys: 1
+Chapel_Bot buys Province
+Chapel_Bot draws 1 Gold, 2 Province, 2 Silver
+
+Turn 28 - dummie_bot
+dummie_bot's hand: 4 Estate, 1 Copper
+Hand: 4 Estate, 1 Copper
+dummie_bot played Copper
+
+Supply:
+ (0)  $- Estate       (3)  $5 Duchy        (1)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (34)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 1
+Buys: 1
+dummie_bot buys nothing
+dummie_bot draws 3 Copper, 2 Estate
+
+Turn 28 - Chapel_Bot
+Chapel_Bot's hand: 1 Gold, 2 Province, 2 Silver
+Hand: 1 Gold, 2 Province, 2 Silver
+Chapel_Bot played Gold, Silver, Silver
+
+Supply:
+ (0)  $- Estate       (3)  $5 Duchy        (1)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (34)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 7
+Buys: 1
+Chapel_Bot buys Duchy
+Chapel_Bot draws 3 Silver, 1 Duchy, 1 Province
+
+Turn 29 - dummie_bot
+dummie_bot's hand: 3 Copper, 2 Estate
+Hand: 3 Copper, 2 Estate
+dummie_bot played Copper, Copper, Copper
+
+Supply:
+ (0)  $- Estate       (2)  $5 Duchy        (1)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (34)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 3
+Buys: 1
+dummie_bot buys nothing
+dummie_bot draws 3 Estate, 2 Copper
+
+Turn 29 - Chapel_Bot
+Chapel_Bot's hand: 3 Silver, 1 Duchy, 1 Province
+Hand: 3 Silver, 1 Duchy, 1 Province
+Chapel_Bot played Silver, Silver, Silver
+
+Supply:
+ (0)  $- Estate       (2)  $5 Duchy        (1)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (34)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 6
+Buys: 1
+Chapel_Bot buys Duchy
+Chapel_Bot draws 2 Province, 2 Duchy, 1 Chapel
+
+Turn 30 - dummie_bot
+dummie_bot's hand: 3 Estate, 2 Copper
+Hand: 3 Estate, 2 Copper
+dummie_bot played Copper, Copper
+
+Supply:
+ (0)  $- Estate       (1)  $5 Duchy        (1)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (34)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 2
+Buys: 1
+dummie_bot buys nothing
+dummie_bot shuffles their deck
+dummie_bot draws 3 Estate, 2 Copper
+
+Turn 30 - Chapel_Bot
+Chapel_Bot's hand: 2 Province, 2 Duchy, 1 Chapel
+Chapel_Bot plays Chapel
+
+Supply:
+ (0)  $- Estate       (1)  $5 Duchy        (1)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (34)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 0
+Buys: 1
+Chapel_Bot buys nothing
+Chapel_Bot shuffles their deck
+Chapel_Bot draws 1 Province, 2 Gold, 1 Silver, 1 Duchy
+
+Turn 31 - dummie_bot
+dummie_bot's hand: 3 Estate, 2 Copper
+Hand: 3 Estate, 2 Copper
+dummie_bot played Copper, Copper
+
+Supply:
+ (0)  $- Estate       (1)  $5 Duchy        (1)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (34)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 2
+Buys: 1
+dummie_bot buys nothing
+dummie_bot draws 4 Estate, 1 Copper
+
+Turn 31 - Chapel_Bot
+Chapel_Bot's hand: 1 Province, 2 Gold, 1 Silver, 1 Duchy
+Hand: 1 Province, 2 Gold, 1 Silver, 1 Duchy
+Chapel_Bot played Gold, Gold, Silver
+
+Supply:
+ (0)  $- Estate       (1)  $5 Duchy        (1)  $8 Province    (10)  $0 Curse     
+(46)  $0 Copper      (34)  $3 Silver      (27)  $6 Gold      
+(10)  $4 Smithy      (10)  $5 Festival    (10)  $5 Laboratory  (10)  $5 Library     (10)  $5 Market    
+ (9)  $2 Chapel      (10)  $3 Merchant    (10)  $3 Vassal      (10)  $3 Village      (8)  $4 Gardens   
+
+Money: 8
+Buys: 1
+Chapel_Bot buys Province
+Chapel_Bot draws 2 Duchy, 2 Province, 1 Silver
+
+Game Result: Chapel_Bot won in 31 turns
+Player: dummie_bot
+Result: loss
+Score: 11
+Turns: 31
+Shuffles: 12
+Turn Order: 1st
+Deck: 7 Copper, 11 Estate
+Player: Chapel_Bot
+Result: win
+Score: 69
+Turns: 31
+Shuffles: 16
+Turn Order: 2nd
+Deck: 7 Duchy, 1 Chapel, 8 Province, 3 Gold, 6 Silver

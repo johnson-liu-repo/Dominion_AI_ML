@@ -15,7 +15,7 @@ human = Human()
 bot = DummieBot()
 
 # Set up the game.
-game = Game(players=[human, bot], expansions=[base.base_set])
+game = Game(players=[human, bot], expansions=[base.test_set])
 
 # Play the game.
 game.play()

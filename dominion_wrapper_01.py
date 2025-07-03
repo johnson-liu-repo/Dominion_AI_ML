@@ -38,19 +38,30 @@ class DominionEnv(gym.Env):
         ### !!!
         # ---->
         # Example: assume 10 possible actions (to be replaced)
-        self.action_space = spaces.Discrete(10)
+        N = 2
+        self.action_space_action = gym.spaces.Discrete(N + 1)  # 0 to N-1 = play card, N = skip
         # ---->
         ### !!!
+
+        # For now, the bot should always play all money available in their hand.
+        # self.action_space_money = gym.spaces.Discrete(0)
 
         ### !!!
         # ---->
         # Example: assume observation is a 100-dim vector (to be replaced)
-        self.observation_space = spaces.Box(low=0, high=100, shape=(100,), dtype=np.float32)
+        M = 8 # 2 kingdom cards, 3 money cards, 3 victory cards.
+        self.action_space_buy = gym.spaces.Discrete(M + 1)  # 0 to M-1 = buy card, M = skip
         # ---->
         ### !!!
 
+        self.action_spaces = {
+            "action": self.action_space_action,
+            "buy": self.action_space_buy
+        }
+
     def reset(self):
         self.game.start()
+        self.phase = "action"
         self.current_player = self.player_bot
         obs = self._get_observation()
         return obs
@@ -98,15 +109,56 @@ class DominionEnv(gym.Env):
             obs = self._get_observation()
             return obs, reward, done, {}
 
-    def _get_observation(self):
-        ### !!!
-        # ---->
-        # TODO: convert player + game state into fixed-length vector
-        vec = np.zeros(100)
-        # ---->
-        ### !!!
+    # def _get_observation(self):
+    #     ### !!!
+    #     # ---->
+    #     # TODO: convert player + game state into fixed-length vector
+    #     vec = np.zeros(100)
+    #     # ---->
+    #     ### !!!
         
-        return vec
+    #     return vec
+
+    def _get_observation(self):
+        player = self.player_bot
+
+        # Count of each card in hand (one-hot or fixed order)
+        hand_counts = self._count_card_types(player.hand.cards, self.all_card_types)
+
+        # Simple scalars
+        num_actions = 1 # For now, limit number of actions to 1.
+        # num_actions = player.actions
+        num_buys = 1 # For now, limit number of buys to 1.
+        # num_buys = player.buys
+        current_coins = player.coins
+
+        # Supply info: number of each card left in supply
+        supply_counts = self._count_card_types_from_supply()
+
+        # Combine all into a single fixed-size vector
+        obs_vector = np.concatenate(
+                [
+                    hand_counts,
+                    [ num_actions, num_buys, current_coins ],
+                    supply_counts
+                ]
+            ).astype(np.float32)
+
+        return obs_vector
+
+    def _count_card_types(self, cards, card_type_list):
+        count = np.zeros(len(card_type_list))
+        for card in cards:
+            idx = card_type_list.index(card.name)
+            count[idx] += 1
+        return count
+
+    def _count_card_types_from_supply(self):
+        count = np.zeros(len(self.all_card_types))
+        for pile in self.game.supply.piles:
+            idx = self.all_card_types.index(pile.name)
+            count[idx] = len(pile)
+        return count
 
     def render(self, mode="human"):
         print(f"Turn: {self.player_bot.turns}, Score: {self.player_bot.get_victory_points()}")

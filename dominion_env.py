@@ -66,28 +66,41 @@ class DominionEnv(gym.Env):
         return counts
 
     def _play_all_treasures(self):
-        for card in self.player_bot.hand.cards[:]:
-            if 'Treasure' in card.types:
+        print(f"Bot is told to play all treasure cards...")
+        for card in self.player_bot.hand.cards:
+            if 'Treasure' in card.type:
+                print(f"Bot is playing (treasure) {card.name}...")
                 card.play(self.player_bot, self.game)
 
     def _apply_action_phase(self, action):
-        if action == len(self.all_card_types): return  # skip
+        if action == len(self.all_card_types):
+            print("Bot is passing the action phase...")
+            return
+
         name = self.all_card_types[action]
         for card in self.player_bot.hand.cards:
             if card.name == name and 'Action' in card.types:
+                print(f"Bot is attempting to play {card.name}...")
                 card.play(self.player_bot, self.game)
                 break
 
     def _apply_buy_phase(self, action):
         reward, done = 0.0, False
-        if action != len(self.all_card_types):
-            name = self.all_card_types[action]
-            for pile in self.game.supply.piles:
-                if pile.name == name and len(pile) > 0:
-                    self.player_bot.buy(pile.cards[0], self.game)
-                    break
+
+        if action == len(self.all_card_types):
+            print("Bot is passing the buy phase...")
+            return
+
+        name = self.all_card_types[action]
+        for pile in self.game.supply.piles:
+            if pile.name == name and len(pile) > 0:
+                print(f"Bot is attempting to buy {pile.name}...")
+                self.player_bot.buy(pile.cards[0], self.game)
+                break
+
         if self.game.is_over():
             done = True
             winners = self.game.get_winners()
             reward = 1.0 if self.player_bot in winners and len(winners) == 1 else 0.5 if self.player_bot in winners else 0.0
+
         return reward, done

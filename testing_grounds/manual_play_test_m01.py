@@ -1,9 +1,9 @@
 import sys
 import os
 
-# Windows-style path to the pyminion library.
-pyminion_dir = r'C:\Users\johns\OneDrive\Desktop\projects\Dominion_AI_ML\pyminion-master'
+pyminion_dir = 'C:/Users/johns/OneDrive/Desktop/projects/Dominion_AI_ML/pyminion_master'
 sys.path.append(pyminion_dir)
+
 
 from pyminion.expansions import base
 from pyminion.game import Game

@@ -37,3 +37,8 @@ class DummieBot(Bot):
         player_id: str = "dummie_bot",
     ):
         super().__init__(decider=DummieBotDecider(), player_id=player_id)
+
+        # ----- Placeholder -----
+        self.actions = 1
+        self.buys = 1
+        self.coins = self.state.money

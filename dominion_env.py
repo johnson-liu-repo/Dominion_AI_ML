@@ -26,27 +26,27 @@ class DominionEnv(gym.Env):
         self.phase = "action"
         return self._get_observation()
 
-    def step(self, action):
+    def step(self, choice):
         if self.phase == "action":
-            self._apply_action_phase(action)
-            self.phase = "money"
-            return self._get_observation(), 0.0, False, {}
+            reward = self._apply_action_phase(choice)
+            self.phase = "money" # <--- self.phase alternates between action, money, buy
+            return self._get_observation(), reward, False, {}
 
         elif self.phase == "money":
             self._play_all_treasures()
-            self.phase = "buy"
+            self.phase = "buy" # <--- self.phase alternates between action, money, buy
             return self._get_observation(), 0.0, False, {}
 
         elif self.phase == "buy":
-            reward, done = self._apply_buy_phase(action)
-            self.phase = "action"
+            reward, done = self._apply_buy_phase(choice)
+            self.phase = "action" # <--- self.phase alternates between action, money, buy
             return self._get_observation(), reward, done, {}
 
     def _get_observation(self):
         player = self.player_bot
         hand_counts = self._count_card_types(player.hand.cards)
         supply_counts = self._count_card_types_from_supply()
-        scalars = np.array([player.actions, player.buys, player.coins])
+        scalars = np.array([player.actions, player.buys, player.state.money])
         return np.concatenate([hand_counts, scalars, supply_counts]).astype(np.float32)
 
     def _count_card_types(self, cards):
@@ -67,36 +67,63 @@ class DominionEnv(gym.Env):
 
     def _play_all_treasures(self):
         print(f"Bot is told to play all treasure cards...")
-        for card in self.player_bot.hand.cards:
+        for card in list(self.player_bot.hand.cards):
             if 'Treasure' in card.type:
-                print(f"Bot is playing (treasure) {card.name}...")
+                print(f"Bot is playing (treasure) {card.name}...which is worth {card.money}")
                 card.play(self.player_bot, self.game)
 
     def _apply_action_phase(self, action):
+        reward = 0.0
+
         if action == len(self.all_card_types):
             print("Bot is passing the action phase...")
-            return
+            return reward
 
+        valid_play = False
         name = self.all_card_types[action]
+
         for card in self.player_bot.hand.cards:
             if card.name == name and 'Action' in card.types:
                 print(f"Bot is attempting to play {card.name}...")
                 card.play(self.player_bot, self.game)
+                valid_play = True
                 break
+        
+        if valid_play == False:
+            reward = -1
+
+        return reward
 
     def _apply_buy_phase(self, action):
-        reward, done = 0.0, False
+        reward, done = 0.0, True
 
         if action == len(self.all_card_types):
             print("Bot is passing the buy phase...")
-            return
+            return reward, done
 
+        valid_buy = False
         name = self.all_card_types[action]
+
         for pile in self.game.supply.piles:
             if pile.name == name and len(pile) > 0:
                 print(f"Bot is attempting to buy {pile.name}...")
-                self.player_bot.buy(pile.cards[0], self.game)
-                break
+
+                cost = pile.cards[0].base_cost
+                print(f"{name} costs {cost}...")
+
+                money = self.player_bot.state.money
+
+                if money >= cost:
+                    self.player_bot.buy(pile.cards[0], self.game)
+                    valid_buy = True
+                    break
+
+                else:
+                    print(f"Bot does not have enough money to buy {name}")
+        
+        if valid_buy == False:
+            reward = -1
+
 
         if self.game.is_over():
             done = True

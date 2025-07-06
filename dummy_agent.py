@@ -16,13 +16,13 @@ def run_dummy_agent(env, render=True):
     while not done:
         print(f"Current phase...{env.phase}")
         if env.phase in env.action_spaces:
-            action = env.action_spaces[env.phase].sample()
-            print(f"Action: {action}...")
+            choice = env.action_spaces[env.phase].sample()
+            print(f"Choice: phase {env.phase}, option {choice}...")
         else:
-            action = 0
-            print("Else action = 0...")
+            choice = None # <--- Buy phase?
+            print(f"Choice: phase {env.phase}...")
 
-        obs, reward, done, _ = env.step(action)
+        obs, reward, done, _ = env.step(choice)
 
         if render:
             print(f"\nPhase summary: {previous_phase}, Reward: {reward}, Done: {done}\n")
@@ -48,9 +48,9 @@ Bot is told to play all treasure cards...
 Phase summary: money, Reward: 0.0, Done: False
 
 Current phase...buy
-Action: 0...
-Bot is attempting to buy Gardens...  <--- need to add code to discern between
-                                          the action of playing an action card
-                                          and the action of buying
-Traceback (most recent call last):
+Action: 0...                              ????????????????????????????????????????????
+Bot is attempting to buy Gardens...  <--- ??? need to add code to discern between  ???
+                                          ??? the action of playing an action card ???
+                                          ??? and the action of buying             ???
+Traceback (most recent call last):        ????????????????????????????????????????????
 """

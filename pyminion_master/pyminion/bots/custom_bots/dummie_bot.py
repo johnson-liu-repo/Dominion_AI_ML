@@ -41,4 +41,3 @@ class DummieBot(Bot):
         # ----- Placeholder -----
         self.actions = 1
         self.buys = 1
-        self.coins = self.state.money

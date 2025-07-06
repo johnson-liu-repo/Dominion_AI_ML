@@ -35,7 +35,7 @@ if __name__ == "__main__":
     print("\n--- Running Dummy Agent ---")
     run_dummy_agent(env)
 
-    exit()
+    # exit()
 
-    print("\n--- Training Buy Phase with DQN ---")
-    train_buy_phase(env)
+    # print("\n--- Training Buy Phase with DQN ---")
+    # train_buy_phase(env)

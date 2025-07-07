@@ -3,11 +3,10 @@ import gym
 from gym import spaces
 
 class DominionEnv(gym.Env):
-    def __init__(self, game, player_bot, opponent_bot, all_card_types):
+    def __init__(self, game, player_bot, opponent_bot=None, all_card_types=[]):
         super().__init__()
         self.game = game
         self.player_bot = player_bot
-        self.opponent_bot = opponent_bot
         self.all_card_types = all_card_types
         self.phase = "action"
         self.current_player = self.player_bot
@@ -22,7 +21,7 @@ class DominionEnv(gym.Env):
         self.observation_space = spaces.Box(low=0, high=100, shape=(obs_size,), dtype=np.float32)
 
     def reset(self):
-        self.game.start()
+        self.game.start() # <--- Fix this. Right now, this is restarting the entire game every reset.
         self.phase = "action"
         return self._get_observation()
 
@@ -82,14 +81,17 @@ class DominionEnv(gym.Env):
         valid_play = False
         name = self.all_card_types[action]
 
+        print(f"Bot is attempting to play {name}...")
+
         for card in self.player_bot.hand.cards:
             if card.name == name and 'Action' in card.types:
-                print(f"Bot is attempting to play {card.name}...")
                 card.play(self.player_bot, self.game)
                 valid_play = True
+                print(f"Bot successfully played {name}...")
                 break
         
         if valid_play == False:
+            print(f"Bot was unable to play {name} because it was not in hand...")
             reward = -1
 
         return reward

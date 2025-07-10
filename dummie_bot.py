@@ -22,13 +22,7 @@ class DummieBotDecider(BotDecider):
         return iter([])
 
     def buy_priority(self, player: Player, game: Game) -> Iterator[Card]:
-        money = player.state.money
-        if money >= 8:
-            yield province
-        if money >= 5:
-            yield duchy
-        if money >= 2:
-            yield estate
+        return iter([])
 
 
 class DummieBot(Bot):

@@ -18,6 +18,10 @@ class DQN(nn.Module):
     def forward(self, x):
         return self.net(x)
 
+##############################################################################
+### ---> Figure out different rewards for buy phase and action phase. <--- ###
+##############################################################################
+
 def train_buy_phase(env, episodes=1000):
     input_dim = env.observation_space.shape[0]
     output_dim = env.action_spaces["buy"].n
@@ -47,10 +51,10 @@ def train_buy_phase(env, episodes=1000):
         steps = 0
 
         while not done:
-            if env.phase != "buy":                           # Tell the bot to take a step
-                obs, _, done, _ = env.step(output_dim - 1)   # forward to the next phase
-                continue                                     # if the current phase is not
-                                                             # the buy phase.
+            # if env.phase != "buy":                           # Tell the bot to take a step
+            #     obs, _, done, _ = env.step(output_dim - 1)   # forward to the next phase
+            #     continue                                     # if the current phase is not
+            #                                                  # the buy phase.
 
             if random.random() < epsilon:
                 action = random.randint(0, output_dim - 1)
@@ -59,7 +63,7 @@ def train_buy_phase(env, episodes=1000):
                     q_vals = policy_net(torch.tensor(obs, dtype=torch.float32))
                     action = q_vals.argmax().item()
 
-            next_obs, reward, done, _ = env.step(action)
+            next_obs, reward, done, _ = env.step_train_buy(action)
 
             # Reward shaping
             if action == output_dim - 1:  # Skip - the agent is passing the phase
@@ -94,6 +98,12 @@ def train_buy_phase(env, episodes=1000):
                 loss.backward()
                 optimizer.step()
 
+
+        ########################################################################################
+        ### Take a look at this ... Does an episode constitute a single turn? Or does an episode
+        ###                         constitute an entire game? A single episode is an entire
+        ###                         game.
+        ########################################################################################
         if reward >= 1.0:                  # This tells us that the agent won
             win_counter += 1               # the game.
 
@@ -103,6 +113,7 @@ def train_buy_phase(env, episodes=1000):
             win_rate = win_counter / 10
             print(f"[Buy Phase] Ep {episode:04d} | ε={epsilon:.3f} | win_rate={win_rate:.2f} | avg_reward={reward_sum / max(steps,1):.3f}")
             win_counter = 0
+        ########################################################################################
 
 def train_action_phase(env, episodes=1000):
     input_dim = env.observation_space.shape[0]
@@ -130,9 +141,9 @@ def train_action_phase(env, episodes=1000):
         steps = 0
 
         while not done:
-            if env.phase != "action":
-                obs, _, done, _ = env.step(0)
-                continue
+            # if env.phase != "action":
+            #     obs, _, done, _ = env.step(0)
+            #     continue
 
             if random.random() < epsilon:
                 action = random.randint(0, output_dim - 1)
@@ -141,7 +152,7 @@ def train_action_phase(env, episodes=1000):
                     q_vals = policy_net(torch.tensor(obs, dtype=torch.float32))
                     action = q_vals.argmax().item()
 
-            next_obs, reward, done, _ = env.step(action)
+            next_obs, reward, done, _ = env.step_train_action(action)
 
             if action == output_dim - 1:  # skipped action
                 reward -= 0.01

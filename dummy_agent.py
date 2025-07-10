@@ -1,6 +1,10 @@
 
 
 
+
+### This isn't used in training. This is used to have the agent play a game
+### to see what it does ( for development and testing purposes... ).
+
 def run_dummy_agent(env, render=True):
     obs = env.reset()
     done = False

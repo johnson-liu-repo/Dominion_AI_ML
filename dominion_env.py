@@ -17,36 +17,68 @@ class DominionEnv(gym.Env):
             "buy": spaces.Discrete(n + 1)
         }
 
-        obs_size = n + 3 + n  # hand vector + 3 scalars + supply vector
-        self.observation_space = spaces.Box(low=0, high=100, shape=(obs_size,), dtype=np.float32)
+        num_card_types = len(all_card_types)
+        obs_len = num_card_types + num_card_types + 3  # supply + hand + [actions, buys, total_money]
+
+        self.observation_space = spaces.Box(low=0, high=100, shape=(obs_len,), dtype=np.float32)
 
     def reset(self):
         self.game.start() # <--- Fix this. Right now, this is restarting the entire game every reset.
         self.phase = "action"
         return self._get_observation()
 
-    def step(self, choice):
-        if self.phase == "action":
-            reward = self._apply_action_phase(choice)
-            self.phase = "money" # <--- self.phase alternates between action, money, buy
-            return self._get_observation(), reward, False, {}
+    def step_train_buy(self, choice):
+        print("Bot is starting turn...")
+        self.player_bot.start_turn(self.game, False)
 
-        elif self.phase == "money":
-            self._play_all_treasures()
-            self.phase = "buy" # <--- self.phase alternates between action, money, buy
-            return self._get_observation(), 0.0, False, {}
+        print("Bot is trying to perform an action..."
+              "( should be nothing since bot has no action instructions )...")
+        self.player_bot.start_action_phase(self.game)
+        # self.game.current_phase = self.game.Phase.Action
+        # while self.state.actions > 0:
+        #     reward = self._apply_action_phase(choice)
+        # if self.phase == "action":
+        #     reward = self._apply_action_phase(choice)
+        #     self.phase = "money" # <--- self.phase alternates between action, money, buy
+        #     return self._get_observation(), reward, False, {}
 
-        elif self.phase == "buy":
-            reward, done = self._apply_buy_phase(choice)
-            self.phase = "action" # <--- self.phase alternates between action, money, buy
-            return self._get_observation(), reward, done, {}
+        self.game.current_phase = self.game.Phase.Buy
+        self._play_all_treasures()
+        # return self._get_observation(), 0.0, False, {}
 
+        # elif self.phase == "buy":
+        #     reward, done = self._apply_buy_phase(choice)
+        #     self.phase = "action" # <--- self.phase alternates between action, money, buy
+        #     return self._get_observation(), reward, done, {}
+
+        print("Bot is starting buy phase..."
+              "( training happens here )...")
+        reward, done = self._apply_buy_phase(choice)
+
+        print("Bot is starting cleanup phase...")
+        self.player_bot.start_cleanup_phase(self.game)
+        print("Bot is ending turn...")
+        self.player_bot.end_turn(self.game)
+
+        return self._get_observation(), reward, done, {}
+
+    ### ---> NEED TO FIGURE OUT WHAT THE OBSERVATIONS SHOULD BE. <--- ###
     def _get_observation(self):
         player = self.player_bot
         hand_counts = self._count_card_types(player.hand.cards)
         supply_counts = self._count_card_types_from_supply()
-        scalars = np.array([player.actions, player.buys, player.state.money])
-        return np.concatenate([hand_counts, scalars, supply_counts]).astype(np.float32)
+
+        # Compute total money available this turn from treasures in hand
+        # treasure_names = {"Copper", "Silver", "Gold"}
+        total_money = sum(card.money for card in player.hand.cards if 'Treasure' in card.type)
+
+        # total_money = sum(card.get_coin_value(game=self.game, player=player) for card in player.hand.cards if card.is_treasure())
+
+        scalars = np.array([player.actions, player.buys, total_money])
+
+        # Final observation
+        obs = np.concatenate([supply_counts, hand_counts, scalars]).astype(np.float32)
+        return obs
 
     def _count_card_types(self, cards):
         counts = np.zeros(len(self.all_card_types))
@@ -106,6 +138,8 @@ class DominionEnv(gym.Env):
         valid_buy = False
         name = self.all_card_types[action]
 
+        print(f"action choice: {action}, name: {name}")
+
         for pile in self.game.supply.piles:
             if pile.name == name and len(pile) > 0:
                 print(f"Bot is attempting to buy {pile.name}...")
@@ -114,6 +148,7 @@ class DominionEnv(gym.Env):
                 print(f"{name} costs {cost}...")
 
                 money = self.player_bot.state.money
+                print(f"money: ${money}, cost: {cost}")
 
                 if money >= cost:
                     self.player_bot.buy(pile.cards[0], self.game)

@@ -1,6 +1,10 @@
 import logging
 import math
 from typing import TYPE_CHECKING
+import sys
+
+pyminion_master_dir = 'C:/Users/johns/OneDrive/Desktop/projects/Dominion_AI_ML/pyminion_master'
+sys.path.append(pyminion_master_dir)
 
 from pyminion.core import AbstractDeck, CardType, Action, Card, ScoreCard, Treasure, Victory, plural
 from pyminion.effects import AttackEffect, EffectAction, FuncPlayerCardGameEffect, FuncPlayerGameEffect, PlayerCardGameEffect

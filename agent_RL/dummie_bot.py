@@ -1,11 +1,17 @@
+
+
 import logging
 from typing import Iterator
+import sys
 
-from pyminion.bots.bot import Bot, BotDecider
-from pyminion.core import Card
-from pyminion.expansions.base import province, duchy, estate
-from pyminion.player import Player
-from pyminion.game import Game
+dominion_dir = 'C:/Users/johns/OneDrive/Desktop/projects/Dominion_AI_ML'
+sys.path.append(dominion_dir)
+
+from pyminion_master.pyminion.bots.bot import Bot, BotDecider
+from pyminion_master.pyminion.core import Card
+from pyminion_master.pyminion.expansions.base import province, duchy, estate
+from pyminion_master.pyminion.player import Player
+from pyminion_master.pyminion.game import Game
 
 logger = logging.getLogger()
 

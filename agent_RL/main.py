@@ -1,14 +1,22 @@
-from dominion_env import DominionEnv
-from dummy_agent import run_dummy_agent
-from train_dqn import train_buy_phase
 
-pyminion_dir = 'C:/Users/johns/OneDrive/Desktop/projects/Dominion_AI_ML/pyminion_master'
 import sys
-sys.path.append(pyminion_dir)
 
-from pyminion.expansions import base
-from pyminion.game import Game
-from dummie_bot import DummieBot
+dominion_dir = 'C:/Users/johns/OneDrive/Desktop/projects/Dominion_AI_ML'
+sys.path.append(dominion_dir)
+
+from pyminion_master.pyminion.expansions import base
+from pyminion_master.pyminion.game import Game
+
+from agent_RL.dominion_env import DominionEnv
+from agent_RL.run_dummy_agent import run_dummy_agent
+from agent_RL.train_dqn import train_buy_phase
+from agent_RL.dummie_bot import DummieBot
+
+
+import logging
+logger = logging.getLogger()
+
+
 
 def get_all_card_types(expansions):
     # Safely extract all possible card names from the selected expansions
@@ -19,17 +27,25 @@ if __name__ == "__main__":
     # Step 1: Choose your bots
     bot1 = DummieBot("RL_Agent")
 
+    print("here0")
+
     # Step 2: Select expansion set and derive card types (before game is started)
     selected_expansions = [base.test_set]
+
+    print("here0.5")
+
     # Step 3: Create the unstarted game
     game = Game(players=[bot1], expansions=selected_expansions)
 
-
+    print("here1")
 
     obs_card_types = ["Gardens", "Smithy", "Estate", "Duchy", "Province", "Copper", "Silver", "Gold"]
 
     # Step 4: Wrap game into Gym-like environment
     env = DominionEnv(game, bot1, None, all_card_types=obs_card_types)
+
+    print("here2")
+
 
     # Step 5: Run tests or train
 
@@ -40,7 +56,10 @@ if __name__ == "__main__":
     # exit()
 
     # Train here...
-    print("\n--- Training Buy Phase with DQN ---")
+    logger.info("-------------------------------------")
+    logger.info("---- Training Buy Phase with DQN ----")
+    logger.info("-------------------------------------")
+
     train_buy_phase(env)
 
 

@@ -39,8 +39,12 @@ class DominionEnv(gym.Env):
         logger.info("Bot is starting turn...")
         self.player_bot.start_turn(self.game, False)
 
-        logger.info("Bot is trying to perform an action..."
-                    "( should be nothing since bot has no action instructions )...")
+        logger.info("The board state is...")
+        logger.info(self.game.supply.get_pretty_string(self.player_bot, self.game))
+
+        logger.info("Bot is trying to perform an action...")
+        logger.info("should be nothing since bot has no action instructions...")
+        logger.info("DummieBotDecider.action_priority returns iter([])")
         self.player_bot.start_action_phase(self.game)
 
         self.game.current_phase = self.game.Phase.Buy
@@ -53,7 +57,7 @@ class DominionEnv(gym.Env):
         logger.info("Bot is starting cleanup phase...")
         self.player_bot.start_cleanup_phase(self.game)
 
-        logger.info("Bot is ending turn...")
+        logger.info("Bot is ending turn...\n\n")
         self.player_bot.end_turn(self.game)
 
         return self._get_observation(), reward, done, {}
@@ -78,6 +82,39 @@ class DominionEnv(gym.Env):
     
     def return_observation(self):
         return self._get_observation()
+    
+    # ----------  BUY-ACTION MASK  ----------
+    def _get_valid_buy_mask(self) -> np.ndarray:
+        """
+        Boolean mask of length |action_space| indicating which buy-indices
+        are legal **right now**. 1 = legal, 0 = illegal.
+        Rule: a buy is legal if
+          • the pile still has cards, AND
+          • player has ≥ money + potions cost, AND
+          • player still has buys remaining.
+        The last index (len(all_card_types)) is the <pass> action → always legal.
+        """
+        mask = np.zeros(self.action_spaces["buy"].n, dtype=np.float32)
+
+        # Quick exit if the player has no buys left
+        if self.player_bot.state.buys == 0:
+            mask[-1] = 1.0          # only “pass” is legal
+            return mask
+
+        money   = self.player_bot.state.money
+        potions = self.player_bot.state.potions
+
+        for i, name in enumerate(self.all_card_types):
+            for pile in self.game.supply.piles:
+                if pile.name == name:
+                    affordable = (pile.cards[0].base_cost.money  <= money and
+                                   pile.cards[0].base_cost.potions <= potions)
+                    if len(pile) > 0 and affordable:
+                        mask[i] = 1.0
+                    break  # found the pile – jump to next card type
+
+        mask[-1] = 1.0  # “pass / buy nothing” is always an option
+        return mask
 
     def _count_card_types(self, cards):
         counts = np.zeros(len(self.all_card_types))

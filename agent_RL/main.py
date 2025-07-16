@@ -19,7 +19,6 @@ logger = logging.getLogger()
 
 
 def get_all_card_types(expansions):
-    # Safely extract all possible card names from the selected expansions
     return sorted({card.name for expansion in expansions for card in expansion})
 
 
@@ -27,33 +26,31 @@ if __name__ == "__main__":
     # Step 1: Choose your bots
     bot1 = DummieBot("RL_Agent")
 
-    print("here0")
-
     # Step 2: Select expansion set and derive card types (before game is started)
     selected_expansions = [base.test_set]
-
-    print("here0.5")
 
     # Step 3: Create the unstarted game
     game = Game(players=[bot1], expansions=selected_expansions)
 
-    print("here1")
-
-    obs_card_types = ["Gardens", "Smithy", "Estate", "Duchy", "Province", "Copper", "Silver", "Gold"]
+    obs_card_types = [ 
+        "Estate",
+        "Duchy",
+        "Province",
+        "Copper",
+        "Silver",
+        "Gold",
+        "Gardens",
+        "Smithy"
+    ]
 
     # Step 4: Wrap game into Gym-like environment
     env = DominionEnv(game, bot1, None, all_card_types=obs_card_types)
-
-    print("here2")
-
 
     # Step 5: Run tests or train
 
     # Test here...
     # print("\n--- Running Dummy Agent ---")
     # run_dummy_agent(env)
-
-    # exit()
 
     # Train here...
     logger.info("-------------------------------------")

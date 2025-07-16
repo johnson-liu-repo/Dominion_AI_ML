@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import random
 from collections import deque
+import numpy as np
 
 
 import logging
@@ -62,15 +63,27 @@ def train_buy_phase(env, episodes=1):
         while not done:
             obs = env.return_observation()
             
+            valid_mask = env._get_valid_buy_mask()          # numpy array of 0/1
+            valid_idxs = np.nonzero(valid_mask)[0]
+
             # Choose to explore or exploit.
             if random.random() < epsilon:
-                # Explore.
-                action = random.randint(0, output_dim - 1)
+                action = int(np.random.choice(valid_idxs))  # explore among valid only
             else:
-                # Exploit.
                 with torch.no_grad():
                     q_vals = policy_net(torch.tensor(obs, dtype=torch.float32))
-                    action = q_vals.argmax().item()
+                    q_vals[valid_mask == 0] = -1e9          # mask invalid
+                    action = int(torch.argmax(q_vals).item())
+
+            # Choose to explore or exploit.
+            # if random.random() < epsilon:
+            #     # Explore.
+            #     action = random.randint(0, output_dim - 1)
+            # else:
+            #     # Exploit.
+            #     with torch.no_grad():
+            #         q_vals = policy_net(torch.tensor(obs, dtype=torch.float32))
+            #         action = q_vals.argmax().item()
 
             next_obs, reward, done, _ = env.step_train_buy(action)
 
@@ -96,6 +109,18 @@ def train_buy_phase(env, episodes=1):
                 act_b = torch.tensor(act_b).unsqueeze(1)
                 rew_b = torch.tensor(rew_b)
                 next_obs_b = torch.tensor(next_obs_b, dtype=torch.float32)
+                with torch.no_grad():
+                    # build a batch of masks for the NEXT obs
+                    masks = []
+                    for single_next_obs in next_obs_b:
+                        env.game._dummy_state_for_vectorised_use(single_next_obs)  # <-- see note*
+                        masks.append(env._get_valid_buy_mask())
+                    mask_tensor = torch.tensor(masks, dtype=torch.float32)
+
+                    next_q = target_net(next_obs_b)
+                    next_q[mask_tensor == 0] = -1e9
+                    next_q = next_q.max(1)[0]
+
                 # done_b = torch.tensor(done_b)
                 done_b = torch.tensor(done_b, dtype=torch.float32)
 
@@ -111,13 +136,8 @@ def train_buy_phase(env, episodes=1):
             if steps == episode_timeout:
                 done = True
 
-        ########################################################################################
-        ### Take a look at this ... Does an episode constitute a single turn? Or does an episode
-        ###                         constitute an entire game? A single episode is an entire
-        ###                         game.
-        ########################################################################################
-        if reward >= 1.0:                  # This tells us that the agent won
-            win_counter += 1               # the game.
+        if env.player_bot in env.game.get_winners():
+            win_counter += 1
 
         if episode % report_interval == 0:
             target_net.load_state_dict(policy_net.state_dict())
@@ -125,4 +145,3 @@ def train_buy_phase(env, episodes=1):
             win_rate = win_counter / report_interval
             logger.info(f"[Buy Phase] Ep {episode:04d} | epsilon={epsilon:.3f} | win_rate={win_rate:.2f} | avg_reward={reward_sum / max(steps,1):.3f}")
             win_counter = 0
-        ########################################################################################

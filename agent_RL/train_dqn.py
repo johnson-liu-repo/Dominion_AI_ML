@@ -62,45 +62,16 @@ def train_buy_phase(env, episodes=1):
 
         while not done:
             obs = env.return_observation()
-            
-            valid_mask = env._get_valid_buy_mask()          # numpy array of 0/1
-            valid_idxs = np.nonzero(valid_mask)[0]
 
-            # Choose to explore or exploit.
-            if random.random() < epsilon:
-                action = int(np.random.choice(valid_idxs))  # explore among valid only
-            else:
-                with torch.no_grad():
-                    q_vals = policy_net(torch.tensor(obs, dtype=torch.float32))
-                    q_vals[valid_mask == 0] = -1e9          # mask invalid
-                    action = int(torch.argmax(q_vals).item())
-
-            # Choose to explore or exploit.
-            # if random.random() < epsilon:
-            #     # Explore.
-            #     action = random.randint(0, output_dim - 1)
-            # else:
-            #     # Exploit.
-            #     with torch.no_grad():
-            #         q_vals = policy_net(torch.tensor(obs, dtype=torch.float32))
-            #         action = q_vals.argmax().item()
-
-            next_obs, reward, done, _ = env.step_train_buy(action)
-
-            # Reward shaping
-            if action == output_dim - 1:  # Skip - the agent is passing the phase
-                reward -= 0.01            #        without doing anything.
-
-            elif reward == 0.0:
-                reward += 0.01          # Give the agent a tiny reward to teach
-                                        # it that doing something (anything) is
-                                        # better than doing nothing (passing).
+            choice, next_obs, reward, done, _ = env.step_train_buy(epsilon)
 
             reward_sum += reward
             steps += 1
 
-            replay_buffer.append((obs, action, reward, next_obs, done))
-            obs = next_obs
+            replay_buffer.append((obs, choice, reward, next_obs, done))
+
+            # Why do we have this?
+            # obs = next_obs
 
             if len(replay_buffer) >= batch_size:
                 batch = random.sample(replay_buffer, batch_size)
@@ -135,6 +106,7 @@ def train_buy_phase(env, episodes=1):
 
             if steps == episode_timeout:
                 done = True
+                logger.info(f"Episode timeout reached: {steps} steps...")
 
         if env.player_bot in env.game.get_winners():
             win_counter += 1

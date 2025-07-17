@@ -1,6 +1,7 @@
 import numpy as np
 import gym
 from gym import spaces
+import random
 
 
 import logging
@@ -35,7 +36,7 @@ class DominionEnv(gym.Env):
         self.phase = "action"
         # return self._get_observation()
 
-    def step_train_buy(self, choice):
+    def step_train_buy(self, epsilon):
         logger.info("Bot is starting turn...")
         self.player_bot.start_turn(self.game, False)
 
@@ -48,10 +49,28 @@ class DominionEnv(gym.Env):
         self.player_bot.start_action_phase(self.game)
 
         self.game.current_phase = self.game.Phase.Buy
+
+        logger.info(f"Bot is told to play all treasure cards...")
         self._play_all_treasures()
 
         logger.info("Bot is starting buy phase..."
                     "( training happens here )...")
+
+        valid_mask = self._get_valid_buy_mask()
+        valid_idxs = np.nonzero(valid_mask)[0]
+
+        # Choose to explore or exploit.
+        # Explore.
+        if random.random() < epsilon:
+            choice = int(np.random.choice(valid_idxs))  # explore among valid only
+
+        # Exploit.
+        else:
+            with torch.no_grad():
+                q_vals = policy_net(torch.tensor(obs, dtype=torch.float32))
+                q_vals[mask == 0] = -1e9          # mask invalid
+                choice = int(torch.argmax(q_vals).item())
+
         reward, done = self._apply_buy_phase(choice)
 
         logger.info("Bot is starting cleanup phase...")
@@ -60,7 +79,8 @@ class DominionEnv(gym.Env):
         logger.info("Bot is ending turn...\n\n")
         self.player_bot.end_turn(self.game)
 
-        return self._get_observation(), reward, done, {}
+        return choice, self._get_observation(), reward, done, {}
+
 
     ### ---> NEED TO FIGURE OUT WHAT THE OBSERVATIONS SHOULD BE. <--- ###
     def _get_observation(self):
@@ -133,67 +153,39 @@ class DominionEnv(gym.Env):
         return counts
 
     def _play_all_treasures(self):
-        logger.info(f"Bot is told to play all treasure cards...")
         for card in list(self.player_bot.hand.cards):
             if 'Treasure' in card.type:
                 logger.info(f"Bot is playing (treasure) {card.name}...which is worth {card.money}")
                 card.play(self.player_bot, self.game)
-
-    def _apply_action_phase(self, action):
-        reward = 0.0
-
-        if action == len(self.all_card_types):
-            logger.info("Bot is passing the action phase...")
-            return reward
-
-        valid_play = False
-        name = self.all_card_types[action]
-
-        logger.info(f"Bot is attempting to play {name}...")
-
-        for card in self.player_bot.hand.cards:
-            if card.name == name and 'Action' in card.types:
-                card.play(self.player_bot, self.game)
-                valid_play = True
-                logger.info(f"Bot successfully played {name}...")
-                break
-        
-        if valid_play == False:
-            logger.info(f"Bot was unable to play {name} because it was not in hand...")
-            reward = -1
-
-        return reward
 
     def _apply_buy_phase(self, action):
         reward, done = 0.0, False
 
         if action == len(self.all_card_types):
             logger.info("Bot is passing the buy phase...")
+            reward = -0.01
             return reward, done
 
         valid_buy = False
-        name = self.all_card_types[action]
+        card_name = self.all_card_types[action]
 
-        logger.info(f"action choice: {action}, name: {name}")
+        logger.info(f"action choice: {action}, card_name: {card_name}")
 
         for pile in self.game.supply.piles:
-            if pile.name == name and len(pile) > 0:
+            if pile.name == card_name and len(pile) > 0:
                 logger.info(f"Bot is attempting to buy {pile.name}...")
 
                 cost = pile.cards[0].base_cost
-                logger.info(f"{name} costs {cost}...")
+                logger.info(f"{card_name} costs {cost}...")
 
                 money = self.player_bot.state.money
                 logger.info(f"money: ${money}, cost: {cost}")
 
                 if money >= cost:
-                    logger.info(f"Bot buys {name}...")
+                    logger.info(f"Bot buys {card_name}...")
                     self.player_bot.buy(pile.cards[0], self.game)
                     valid_buy = True
-
-                    # logger.info(f"[DEBUG] Supply left: {[card.name for card in self.game.supply.cards if card.count > 0]}")
-                    # logger.info(f"[DEBUG] Game over? {self.game.is_over()}")
-
+                    reward = 0.1
                     break
 
                 else:
@@ -201,7 +193,6 @@ class DominionEnv(gym.Env):
 
         if valid_buy == False:
             reward = -1
-
 
         if self.game.is_over():
             done = True

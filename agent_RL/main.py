@@ -32,6 +32,8 @@ if __name__ == "__main__":
     # Step 3: Create the unstarted game
     game = Game(players=[bot1], expansions=selected_expansions)
 
+    # >>> Figure out how to pass this into expansions above in game = Game(...)
+    #     so that we can be consistent with the cards that are used in the game. <<<
     obs_card_types = [ 
         "Estate",
         "Duchy",
@@ -57,7 +59,7 @@ if __name__ == "__main__":
     logger.info("---- Training Buy Phase with DQN ----")
     logger.info("-------------------------------------")
 
-    train_buy_phase(env)
+    train_buy_phase(env, episodes=1)
 
 
 ### Notes:

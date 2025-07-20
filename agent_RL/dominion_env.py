@@ -2,10 +2,14 @@ import numpy as np
 import gym
 from gym import spaces
 import random
+import torch
 
 
 import logging
 logger = logging.getLogger()
+
+
+
 
 
 
@@ -30,13 +34,11 @@ class DominionEnv(gym.Env):
         self.observation_space = spaces.Box(low=0, high=100, shape=(obs_len,), dtype=np.float32)
 
     def reset(self):
-        self.game.start() # <--- Fix this. Right now, this is restarting the entire game every reset.
-                          # Actually, is the problem here or somewhere else? Since the game is supposed
-                          # to restart at the end of an episode.
+        self.game.start()
         self.phase = "action"
         # return self._get_observation()
 
-    def step_train_buy(self, epsilon):
+    def step_train_buy(self, epsilon, policy_net):
         logger.info("Bot is starting turn...")
         self.player_bot.start_turn(self.game, False)
 

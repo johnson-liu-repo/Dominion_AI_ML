@@ -29,7 +29,10 @@ class DQN(nn.Module):
 ### ---> Figure out different rewards for buy phase and action phase. <--- ###
 ##############################################################################
 
-def train_buy_phase(env, episodes=1):
+def train_buy_phase(
+        env, 
+        episodes=1
+    ):
     report_interval = 1
     episode_timeout = 10
 
@@ -63,7 +66,7 @@ def train_buy_phase(env, episodes=1):
         while not done:
             obs = env.return_observation()
 
-            choice, next_obs, reward, done, _ = env.step_train_buy(epsilon)
+            choice, next_obs, reward, done, _ = env.step_train_buy(epsilon, policy_net)
 
             reward_sum += reward
             steps += 1

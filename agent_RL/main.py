@@ -7,65 +7,50 @@ sys.path.append(dominion_dir)
 from pyminion_master.pyminion.expansions import base
 from pyminion_master.pyminion.game import Game
 
-from agent_RL.dominion_env import DominionEnv
-from agent_RL.run_dummy_agent import run_dummy_agent
 from agent_RL.train_dqn import train_buy_phase
-from agent_RL.dummie_bot import DummieBot
+from agent_RL.card_catalog import BASE_CARDS
 
 
 import logging
 logger = logging.getLogger()
 
 
-
-def get_all_card_types(expansions):
-    return sorted({card.name for expansion in expansions for card in expansion})
-
-
 if __name__ == "__main__":
-    # Step 1: Choose your bots
-    bot1 = DummieBot("RL_Agent")
 
-    # Step 2: Select expansion set and derive card types (before game is started)
-    selected_expansions = [base.test_set]
-
-    # Step 3: Create the unstarted game
-    game = Game(players=[bot1], expansions=selected_expansions)
-
-    # >>> Figure out how to pass this into expansions above in game = Game(...)
-    #     so that we can be consistent with the cards that are used in the game. <<<
-    obs_card_types = [ 
-        "Estate",
-        "Duchy",
-        "Province",
-        "Copper",
-        "Silver",
-        "Gold",
-        "Gardens",
-        "Smithy"
-    ]
-
-    # Step 4: Wrap game into Gym-like environment
-    env = DominionEnv(game, bot1, None, all_card_types=obs_card_types)
-
-    # Step 5: Run tests or train
-
-    # Test here...
-    # print("\n--- Running Dummy Agent ---")
-    # run_dummy_agent(env)
-
+  
     # Train here...
     logger.info("-------------------------------------")
     logger.info("---- Training Buy Phase with DQN ----")
     logger.info("-------------------------------------")
 
-    train_buy_phase(env, episodes=1)
+
+    base_set_cards = BASE_CARDS
+
+    train_buy_phase(
+            cards_used_in_game = base_set_cards,
+            episodes=1,
+            episode_timeout=1,
+            report_interval=1,
+            n_envs=1
+        )
+
+
+    logger.info("----------------------------------------------------")
+    logger.info("----------------------------------------------------")
+    logger.info("----------------------------------------------------")
+    logger.info("----------------------------------------------------")
+    logger.info("FIGURE OUT HOW TO TRAIN BUY PHASE SEPARATELY FROM\n"
+                "ACTION PHASE IN A WAY THAT LETS THE AGENT LEARN\n"
+                "HOW TO USE THE CARDS THAT IT BUYS...\n"
+                "...READ THROUGH NOTES IN CODE...")
+    logger.info("----------------------------------------------------")
+    logger.info("----------------------------------------------------")
+    logger.info("----------------------------------------------------")
+    logger.info("----------------------------------------------------")
+
 
 
 ### Notes:
-# 1. Reward things like card draw and increasing turn money?
-# 1. Curriculum learning?
-# 1. Rewards based on victory points at the end of the game?
 # 1. Right now, scope is limited to training only a few selected cards. But if we want the agent
 #    to generalize its knowledge to other cards that it has not seen before / trained on, we will
 #    have to figure out how to encode card details into the agent's observation space.

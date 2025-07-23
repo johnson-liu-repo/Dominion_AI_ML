@@ -57,6 +57,9 @@ class Game:
         self.players = players
         self.current_player = self.players[0]
         self.expansions = expansions
+
+        self.num_kingdom_cards = sum([len(expansion) for expansion in self.expansions])
+
         self.kingdom_cards = [] if kingdom_cards is None else kingdom_cards
         self.all_game_cards: list[Card] = []
         self.card_cost_reduction = 0
@@ -135,7 +138,7 @@ class Game:
         """
         ### Value here is being changed for development.
         # KINGDOM_PILES: int = 10 # <----- original value
-        KINGDOM_PILES: int = 2
+        KINGDOM_PILES: int = self.num_kingdom_cards
 
         # All available cards from chosen expansions
         kingdom_options = [card for expansion in self.expansions for card in expansion]

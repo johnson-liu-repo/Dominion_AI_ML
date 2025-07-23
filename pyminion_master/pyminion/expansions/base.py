@@ -1312,6 +1312,52 @@ base_set: list[Card] = [
     workshop,
 ]
 
+
+base_set_actions: list[Card] = [
+    artisan,
+    bandit,
+    bureaucrat,
+    cellar,
+    chapel,
+    council_room,
+    festival,
+    gardens,
+    harbinger,
+    laboratory,
+    library,
+    market,
+    merchant,
+    militia,
+    mine,
+    moat,
+    moneylender,
+    poacher,
+    remodel,
+    sentry,
+    smithy,
+    throne_room,
+    vassal,
+    village,
+    witch,
+    workshop,
+]
+
+base_set_treasures: list[Card] = [
+    copper,
+    silver,
+    gold
+]
+
+base_set_victory: list[Card] = [
+    estate,
+    duchy,
+    province
+]
+
+base_set_curses: list[Card] = [
+    curse
+]
+
 #######################################################################
 # For testing custom bots.
 #######################################################################
@@ -1319,6 +1365,32 @@ test_set: list[Card] = [
     gardens,
     smithy,
 ]
+
+# Phase 0
+curriculum_basic: list[Card] = [
+
+]
+
+# Phase 1
+curriculum_simple: list[Card] = [
+    festival,
+    gardens,
+    laboratory,
+    market,
+    smithy,
+    village
+]
+
+# Phase 2
+curriculum_attack: list[Card] = [
+    bandit,
+    bureaucrat,
+    militia,
+    witch
+]
+
+
+
 #######################################################################
 
 base_set_info = {
@@ -1354,4 +1426,5 @@ base_set_info = {
     vassal : Vassal(),
     village : Village(),
     witch : Witch(),
-    workshop : Workshop() }
+    workshop : Workshop()
+}

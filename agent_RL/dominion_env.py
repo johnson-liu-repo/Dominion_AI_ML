@@ -1,7 +1,12 @@
+
+
+import random
 import numpy as np
+import copy
+
+
 import gym
 from gym import spaces
-import random
 import torch
 
 
@@ -10,35 +15,60 @@ logger = logging.getLogger()
 
 
 
-
-
-
 class DominionEnv(gym.Env):
-    def __init__(self, game, player_bot, opponent_bot=None, all_card_types=[]):
-        super().__init__()
-        self.game = game
-        self.player_bot = player_bot
-        self.all_card_types = all_card_types
-        self.phase = "action"
-        self.current_player = self.player_bot
+    def __init__(
+        self,
+        game,
+        player_bot,
+        opponent_bot = None,
+        all_cards = []
+    ):
 
-        n = len(all_card_types)
+        super().__init__()
+        self.game_object = game
+        self.game = copy.copy(self.game_object)
+
+        self.player_bot = player_bot
+        self.all_cards = all_cards
+        self.phase = "action"
+
+        n = len(all_cards)
         self.action_spaces = {
             "action": spaces.Discrete(n + 1),
             "buy": spaces.Discrete(n + 1)
         }
 
-        num_card_types = len(all_card_types)
+        self.action_space = self.action_spaces["buy"]  # for Gym compatibility
+
+        num_card_types = len(all_cards)
         obs_len = num_card_types + num_card_types + 3  # supply + hand + [actions, buys, total_money]
 
         self.observation_space = spaces.Box(low=0, high=100, shape=(obs_len,), dtype=np.float32)
 
-    def reset(self):
+
+    def seed(self, seed=None):
+        self.np_random, seed = gym.utils.seeding.np_random(seed)
+        random.seed(seed)
+        np.random.seed(seed)
+        return [seed]
+
+    
+    def reset(self, *, seed=None, options=None):
+        super().reset(seed=seed)
+        self.game = copy.copy(self.game_object)
         self.game.start()
         self.phase = "action"
-        # return self._get_observation()
+        obs = self._get_observation()
+        info = {}  # no extra info yet, but Gym expects this structure
+        return obs, info
 
-    def step_train_buy(self, epsilon, policy_net):
+
+    def step(self, action):
+        """
+        Gym-compatible step for buy-phase: takes one int (action),
+        applies it, updates the game, and returns the observation.
+        """
+
         logger.info("Bot is starting turn...")
         self.player_bot.start_turn(self.game, False)
 
@@ -58,63 +88,54 @@ class DominionEnv(gym.Env):
         logger.info("Bot is starting buy phase..."
                     "( training happens here )...")
 
-        valid_mask = self._get_valid_buy_mask()
-        valid_idxs = np.nonzero(valid_mask)[0]
-
-        # Choose to explore or exploit.
-        # Explore.
-        if random.random() < epsilon:
-            choice = int(np.random.choice(valid_idxs))  # explore among valid only
-
-        # Exploit.
-        else:
-            with torch.no_grad():
-                q_vals = policy_net(torch.tensor(obs, dtype=torch.float32))
-                q_vals[mask == 0] = -1e9          # mask invalid
-                choice = int(torch.argmax(q_vals).item())
-
-        reward, done = self._apply_buy_phase(choice)
-
+        reward, terminated = self._apply_buy_phase(action)
+        ###### vvv CHECK THIS OUT LATER vvv ######
+        truncated = False                # unless you introduce a max‑turn cutoff
+        ###### ^^^ CHECK THIS OUT LATER ^^^ ######
+        
         logger.info("Bot is starting cleanup phase...")
         self.player_bot.start_cleanup_phase(self.game)
 
         logger.info("Bot is ending turn...\n\n")
         self.player_bot.end_turn(self.game)
 
-        return choice, self._get_observation(), reward, done, {}
+        # cleanup …
+        obs  = self._get_observation()
+        info = {}
+
+        return obs, reward, terminated, truncated, info
+
 
 
     ### ---> NEED TO FIGURE OUT WHAT THE OBSERVATIONS SHOULD BE. <--- ###
     def _get_observation(self):
-        player = self.player_bot
-        hand_counts = self._count_card_types(player.hand.cards)
         supply_counts = self._count_card_types_from_supply()
+        hand_counts = self._count_card_types()
 
         # Compute total money available this turn from treasures in hand
-        # treasure_names = {"Copper", "Silver", "Gold"}
-        total_money = sum(card.money for card in player.hand.cards if 'Treasure' in card.type)
+        total_money = sum(card.money for card in self.player_bot.hand.cards if 'Treasure' in card.type)
 
-        # total_money = sum(card.get_coin_value(game=self.game, player=player) for card in player.hand.cards if card.is_treasure())
-
-        scalars = np.array([player.actions, player.buys, total_money])
+        scalars = np.array([self.player_bot.actions, self.player_bot.buys, total_money])
 
         # Final observation
         obs = np.concatenate([supply_counts, hand_counts, scalars]).astype(np.float32)
+        
         return obs
     
     def return_observation(self):
         return self._get_observation()
     
+
     # ----------  BUY-ACTION MASK  ----------
     def _get_valid_buy_mask(self) -> np.ndarray:
         """
         Boolean mask of length |action_space| indicating which buy-indices
-        are legal **right now**. 1 = legal, 0 = illegal.
+        are legal **right now**. 1|0 -- legal|illegal
         Rule: a buy is legal if
           • the pile still has cards, AND
           • player has ≥ money + potions cost, AND
           • player still has buys remaining.
-        The last index (len(all_card_types)) is the <pass> action → always legal.
+        The last index (len(all_cards)) is the <pass> action → always legal.
         """
         mask = np.zeros(self.action_spaces["buy"].n, dtype=np.float32)
 
@@ -126,7 +147,7 @@ class DominionEnv(gym.Env):
         money   = self.player_bot.state.money
         potions = self.player_bot.state.potions
 
-        for i, name in enumerate(self.all_card_types):
+        for i, name in enumerate(self.all_cards):
             for pile in self.game.supply.piles:
                 if pile.name == name:
                     affordable = (pile.cards[0].base_cost.money  <= money and
@@ -138,19 +159,19 @@ class DominionEnv(gym.Env):
         mask[-1] = 1.0  # “pass / buy nothing” is always an option
         return mask
 
-    def _count_card_types(self, cards):
-        counts = np.zeros(len(self.all_card_types))
-        for card in cards:
-            if card.name in self.all_card_types:
-                idx = self.all_card_types.index(card.name)
+    def _count_card_types(self):
+        counts = np.zeros(len(self.all_cards))
+        for card in self.player_bot.hand.cards:
+            if card.name in self.all_cards:
+                idx = self.all_cards.index(card.name)
                 counts[idx] += 1
         return counts
 
     def _count_card_types_from_supply(self):
-        counts = np.zeros(len(self.all_card_types))
+        counts = np.zeros(len(self.all_cards))
         for pile in self.game.supply.piles:
-            if pile.name in self.all_card_types:
-                idx = self.all_card_types.index(pile.name)
+            if pile.name in self.all_cards:
+                idx = self.all_cards.index(pile.name)
                 counts[idx] = len(pile)
         return counts
 
@@ -163,13 +184,13 @@ class DominionEnv(gym.Env):
     def _apply_buy_phase(self, action):
         reward, done = 0.0, False
 
-        if action == len(self.all_card_types):
-            logger.info("Bot is passing the buy phase...")
+        if action == len(self.all_cards):
+            logger.info(f"action choice: {action}, Bot is passing the buy phase...")
             reward = -0.01
             return reward, done
 
         valid_buy = False
-        card_name = self.all_card_types[action]
+        card_name = self.all_cards[action]
 
         logger.info(f"action choice: {action}, card_name: {card_name}")
 

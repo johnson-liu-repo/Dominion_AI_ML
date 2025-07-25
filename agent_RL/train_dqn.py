@@ -140,10 +140,12 @@ def train_buy_phase(
 
                 # Explore or exploit.
                 if random.random() < epsilon:
-                    actions[i] = np.random.choice(valid_idxs)
+                    actions[i] = int(np.random.choice(valid_idxs))
                 else:
-                    q_vals[i][mask == 0] = -1e9  # mask invalid actions
-                    actions[i] = torch.argmax(q_vals[i]).item()
+                    q_vals_mod = q_vals[i].clone()
+                    q_vals_mod[mask == 0] = -1e9
+                    actions[i] = int(torch.argmax(q_vals_mod).item())
+
 
             next_obs, rewards, terminated, truncated, infos = envs.step(actions)
             dones = np.logical_or(terminated, truncated)
@@ -159,7 +161,8 @@ def train_buy_phase(
                 batch = random.sample(replay_buffer, batch_size)
                 obs_b, act_b, rew_b, next_obs_b, done_b = zip(*batch)
                 obs_b = torch.tensor(obs_b, dtype=torch.float32)
-                act_b = torch.tensor(act_b).unsqueeze(1)
+                # act_b = torch.tensor(act_b).unsqueeze(1)
+                act_b = torch.as_tensor(act_b, dtype=torch.long).unsqueeze(1)
                 rew_b = torch.tensor(rew_b)
                 next_obs_b = torch.tensor(next_obs_b, dtype=torch.float32)
                 done_b = torch.tensor(done_b, dtype=torch.float32)

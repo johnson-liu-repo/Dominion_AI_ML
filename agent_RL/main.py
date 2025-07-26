@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     train_buy_phase(
             cards_used_in_game = base_set_cards,
-            episodes=1,
+            episodes=2,
             episode_timeout=1,
             report_interval=1,
             n_envs=1

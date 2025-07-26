@@ -160,10 +160,10 @@ def train_buy_phase(
             if len(replay_buffer) >= batch_size:
                 batch = random.sample(replay_buffer, batch_size)
                 obs_b, act_b, rew_b, next_obs_b, done_b = zip(*batch)
-                obs_b = torch.tensor(obs_b, dtype=torch.float32)
-                # act_b = torch.tensor(act_b).unsqueeze(1)
+                obs_b_np = np.asarray(obs_b, dtype=np.float32)
+                obs_b = torch.tensor(obs_b_np, dtype=torch.float32)
                 act_b = torch.as_tensor(act_b, dtype=torch.long).unsqueeze(1)
-                rew_b = torch.tensor(rew_b)
+                rew_b = torch.tensor(rew_b, dtype=torch.float32)
                 next_obs_b = torch.tensor(next_obs_b, dtype=torch.float32)
                 done_b = torch.tensor(done_b, dtype=torch.float32)
 
@@ -175,6 +175,10 @@ def train_buy_phase(
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
+
+            if steps >= episode_timeout:
+                break
+                # dones = [True] * n_envs
 
         epsilon = max(epsilon_min, epsilon * epsilon_decay)
         avg_reward = reward_sums.mean()

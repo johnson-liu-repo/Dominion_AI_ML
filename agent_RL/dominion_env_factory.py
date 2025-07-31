@@ -11,7 +11,7 @@ import numpy as np
 from pyminion_master.pyminion.expansions import base
 from pyminion_master.pyminion.game import Game
 
-from agent_RL.dominion_env import DominionEnv
+from agent_RL.dominion_env import DominionBuyPhaseEnv
 from agent_RL.dummie_bot import DummieBot
 
 
@@ -32,7 +32,7 @@ def make_env(cards_used_in_game, seed=None):
             random_order=True  # or False for deterministic
         )
 
-        env = DominionEnv(
+        env = DominionBuyPhaseEnv(
             game = game,
             player_bot = bot1,
             all_cards = cards_used_in_game

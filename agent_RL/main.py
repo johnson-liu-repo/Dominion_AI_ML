@@ -9,6 +9,7 @@ from pyminion_master.pyminion.game import Game
 
 from agent_RL.train_dqn import train_buy_phase
 from agent_RL.card_catalog import BASE_CARDS
+from agent_RL.dominion_env_factory import make_env
 
 
 import logging
@@ -24,7 +25,9 @@ if __name__ == "__main__":
     logger.info("-------------------------------------")
 
 
-    base_set_cards = BASE_CARDS
+    env = make_env(BASE_CARDS)
+
+    train_buy_phase(env)
 
 
 

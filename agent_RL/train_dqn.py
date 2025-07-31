@@ -119,7 +119,7 @@ def train_buy_phase(env, episodes=2, buffer_size=10_000, batch_size=64):
 
         # --------------- episode end  -----------------
         epsilon = max(eps_min, epsilon * eps_decay)
-        print(f"Ep {ep:04d} | steps={step_ctr:3d} | ε={epsilon:.3f} | reward={ep_reward:.3f}")
+        print(f"Ep {ep:04d} | steps={step_ctr:3d} | epsilon={epsilon:.3f} | reward={ep_reward:.3f}")
 
         if (ep + 1) % target_update == 0:
             target_net.load_state_dict(policy_net.state_dict())

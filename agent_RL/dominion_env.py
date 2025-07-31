@@ -1,225 +1,145 @@
-
-
-import random
+# dominion_env.py
 import numpy as np
-import copy
-
-
 import gym
 from gym import spaces
-import torch
-
-
 import logging
-logger = logging.getLogger()
+
+logger = logging.getLogger(__name__)          # re-use global formatter from game.py
 
 
+class DominionBuyPhaseEnv(gym.Env):
+    """
+    A one-phase wrapper: the *agent* decides only the BUY action.
+    All other phases are executed internally so every step == exactly
+    one *complete* player turn.
+    """
+    metadata = {"render_modes": ["ansi"]}
 
-class DominionEnv(gym.Env):
-    def __init__(
-        self,
-        game,
-        player_bot,
-        opponent_bot = None,
-        all_cards = []
-    ):
-
+    def __init__(self, game, player_bot, card_names):
         super().__init__()
-        self.game_object = game
-        self.game = copy.copy(self.game_object)
+        self.game        = game
+        self.bot         = player_bot          # convenience alias
+        self.card_names  = card_names          # ordered list of |K| kingdom cards
+        self.pass_idx    = len(card_names)     # final index is "pass / buy nothing"
 
-        self.player_bot = player_bot
-        self.all_cards = all_cards
-        self.phase = "action"
+        n = len(card_names)
+        self.action_space = spaces.Discrete(n + 1)                  # 0..n  (n==pass)
+        self.observation_space = spaces.Box(low=0, high=100,
+                                            shape=(2 * n + 3,),     # supply + hand + scalars
+                                            dtype=np.float32)
 
-        n = len(all_cards)
-        self.action_spaces = {
-            "action": spaces.Discrete(n + 1),
-            "buy": spaces.Discrete(n + 1)
-        }
+        # internal flags
+        self._done  = False
+        self._turn  = 0
 
-        self.action_space = self.action_spaces["buy"]  # for Gym compatibility
-
-        num_card_types = len(all_cards)
-        obs_len = num_card_types + num_card_types + 3  # supply + hand + [actions, buys, total_money]
-
-        self.observation_space = spaces.Box(low=0, high=100, shape=(obs_len,), dtype=np.float32)
-
-
-    def seed(self, seed=None):
-        self.np_random, seed = gym.utils.seeding.np_random(seed)
-        random.seed(seed)
-        np.random.seed(seed)
-        return [seed]
-
-    
+    # --------------------------------------------------------------------- #
+    #  Public API                                                           #
+    # --------------------------------------------------------------------- #
     def reset(self, *, seed=None, options=None):
         super().reset(seed=seed)
-        self.game = copy.copy(self.game_object)
-        self.game.start()
-        self.phase = "action"
-        obs = self._get_observation()
-        info = {}  # no extra info yet, but Gym expects this structure
-        return obs, info
+        self.game.start()                   # full game restart
+        self._turn, self._done = 0, False
+        self._start_new_turn()              # plays start-action & treasure phase
+        return self._obs(), {}
 
+    def step(self, action: int):
+        assert self.action_space.contains(action), "invalid action index"
+        reward, _ = self._apply_buy(action)
 
-    def step(self, action):
-        """
-        Gym-compatible step for buy-phase: takes one int (action),
-        applies it, updates the game, and returns the observation.
-        """
+        # --- wrap up the turn -------------------------------------------- #
+        self.bot.start_cleanup_phase(self.game)
+        self.bot.end_turn(self.game)
 
-        logger.info("Bot is starting turn...")
-        self.player_bot.start_turn(self.game, False)
+        # terminal check (province pile / empty-3) ------------------------- #
+        if self.game.is_over():
+            self._done = True
+            winners = self.game.get_winners()
+            info = {"won": self.bot in winners}
+            # overwrite reward with final outcome bonus
+            reward += 1.0 if info["won"] else 0.0
+            return self._obs(), reward, True, info
 
-        logger.info("The board state is...")
-        logger.info(self.game.supply.get_pretty_string(self.player_bot, self.game))
+        # otherwise start next turn & return obs -------------------------- #
+        self._start_new_turn()
+        return self._obs(), reward, False, {}
 
-        logger.info("Bot is trying to perform an action...")
-        logger.info("should be nothing since bot has no action instructions...")
-        logger.info("DummieBotDecider.action_priority returns iter([])")
-        self.player_bot.start_action_phase(self.game)
-
+    # --------------------------------------------------------------------- #
+    #  Internal helpers                                                     #
+    # --------------------------------------------------------------------- #
+    def _start_new_turn(self):
+        """Run start-turn, action-phase (bot has none), treasure-phase."""
+        self._turn += 1
+        self.bot.start_turn(self.game, is_extra_turn=False)
+        self.bot.start_action_phase(self.game)     # DummieBot no-ops
         self.game.current_phase = self.game.Phase.Buy
+        # auto-play all treasures
+        for card in list(self.bot.hand.cards):
+            if 'Treasure' in card.type:
+                self.bot.exact_play(card, self.game)
 
-        logger.info(f"Bot is told to play all treasure cards...")
-        self._play_all_treasures()
-
-        logger.info("Bot is starting buy phase..."
-                    "( training happens here )...")
-
-        reward, terminated = self._apply_buy_phase(action)
-        ###### vvv CHECK THIS OUT LATER vvv ######
-        truncated = False                # unless you introduce a max‑turn cutoff
-        ###### ^^^ CHECK THIS OUT LATER ^^^ ######
-        
-        logger.info("Bot is starting cleanup phase...")
-        self.player_bot.start_cleanup_phase(self.game)
-
-        logger.info("Bot is ending turn...\n\n")
-        self.player_bot.end_turn(self.game)
-
-        # cleanup …
-        obs  = self._get_observation()
-        info = {}
-
-        return obs, reward, terminated, truncated, info
-
-
-
-    ### ---> NEED TO FIGURE OUT WHAT THE OBSERVATIONS SHOULD BE. <--- ###
-    def _get_observation(self):
-        supply_counts = self._count_card_types_from_supply()
-        hand_counts = self._count_card_types()
-
-        # Compute total money available this turn from treasures in hand
-        total_money = sum(card.money for card in self.player_bot.hand.cards if 'Treasure' in card.type)
-
-        scalars = np.array([self.player_bot.actions, self.player_bot.buys, total_money])
-
-        # Final observation
-        obs = np.concatenate([supply_counts, hand_counts, scalars]).astype(np.float32)
-        
-        return obs
-    
-    def return_observation(self):
-        return self._get_observation()
-    
-
-    # ----------  BUY-ACTION MASK  ----------
-    def _get_valid_buy_mask(self) -> np.ndarray:
+    # ---------- buy logic ------------------------------------------------- #
+    def _apply_buy(self, action_idx: int):
         """
-        Boolean mask of length |action_space| indicating which buy-indices
-        are legal **right now**. 1|0 -- legal|illegal
-        Rule: a buy is legal if
-          • the pile still has cards, AND
-          • player has ≥ money + potions cost, AND
-          • player still has buys remaining.
-        The last index (len(all_cards)) is the <pass> action → always legal.
+        Execute the chosen buy.  Returns (reward, valid_flag).
+        Reward scheme:
+          • +0.01  valid buy (or pass)
+          • -0.01  illegal selection (not enough $, empty pile, mask==0)
         """
-        mask = np.zeros(self.action_spaces["buy"].n, dtype=np.float32)
+        #  mask invalid indices
+        mask = self.valid_action_mask()
+        if mask[action_idx] == 0:
+            return -0.01, False
 
-        # Quick exit if the player has no buys left
-        if self.player_bot.state.buys == 0:
-            mask[-1] = 1.0          # only “pass” is legal
+        if action_idx == self.pass_idx:         # no purchase
+            return +0.01, True
+
+        name = self.card_names[action_idx]
+        pile = self.game.supply.get_pile(name)
+        try:
+            self.bot.buy(pile.cards[0], self.game)
+            return +0.01, True
+        except Exception:                       # money / buys / empty pile
+            return -0.01, False
+
+    # ---------- observation + mask --------------------------------------- #
+    def _obs(self):
+        h = self._count_deck(self.bot.hand.cards)
+        s = self._count_supply()
+        scalars = np.array([self.bot.state.actions,
+                            self.bot.state.buys,
+                            self.bot.state.money], dtype=np.float32)
+        return np.concatenate([s, h, scalars])
+
+    def valid_action_mask(self):
+        """
+        A binary (n+1,) mask where 1 == legal.
+        • Legal if pile non-empty and cost ≤ money and bot has buys.
+        The last slot (pass) is always legal.
+        """
+        money, buys = self.bot.state.money, self.bot.state.buys
+        mask = np.zeros(len(self.card_names) + 1, dtype=np.float32)
+        if buys == 0:
+            mask[self.pass_idx] = 1.0
             return mask
 
-        money   = self.player_bot.state.money
-        potions = self.player_bot.state.potions
-
-        for i, name in enumerate(self.all_cards):
-            for pile in self.game.supply.piles:
-                if pile.name == name:
-                    affordable = (pile.cards[0].base_cost.money  <= money and
-                                   pile.cards[0].base_cost.potions <= potions)
-                    if len(pile) > 0 and affordable:
-                        mask[i] = 1.0
-                    break  # found the pile – jump to next card type
-
-        mask[-1] = 1.0  # “pass / buy nothing” is always an option
+        for i, name in enumerate(self.card_names):
+            pile = self.game.supply.get_pile(name)
+            if len(pile) and pile.cards[0].get_cost(self.bot, self.game).money <= money:
+                mask[i] = 1.0
+        mask[self.pass_idx] = 1.0
         return mask
 
-    def _count_card_types(self):
-        counts = np.zeros(len(self.all_cards))
-        for card in self.player_bot.hand.cards:
-            if card.name in self.all_cards:
-                idx = self.all_cards.index(card.name)
-                counts[idx] += 1
-        return counts
+    # ---------- util counts ---------------------------------------------- #
+    def _count_deck(self, cards):
+        cnt = np.zeros(len(self.card_names), dtype=np.float32)
+        for c in cards:
+            if c.name in self.card_names:
+                cnt[self.card_names.index(c.name)] += 1
+        return cnt
 
-    def _count_card_types_from_supply(self):
-        counts = np.zeros(len(self.all_cards))
+    def _count_supply(self):
+        cnt = np.zeros(len(self.card_names), dtype=np.float32)
         for pile in self.game.supply.piles:
-            if pile.name in self.all_cards:
-                idx = self.all_cards.index(pile.name)
-                counts[idx] = len(pile)
-        return counts
-
-    def _play_all_treasures(self):
-        for card in list(self.player_bot.hand.cards):
-            if 'Treasure' in card.type:
-                logger.info(f"Bot is playing (treasure) {card.name}...which is worth {card.money}")
-                card.play(self.player_bot, self.game)
-
-    def _apply_buy_phase(self, action):
-        reward, done = 0.0, False
-
-        if action == len(self.all_cards):
-            logger.info(f"action choice: {action}, Bot is passing the buy phase...")
-            reward = -0.01
-            return reward, done
-
-        valid_buy = False
-        card_name = self.all_cards[action]
-
-        logger.info(f"action choice: {action}, card_name: {card_name}")
-
-        for pile in self.game.supply.piles:
-            if pile.name == card_name and len(pile) > 0:
-                logger.info(f"Bot is attempting to buy {pile.name}...")
-
-                cost = pile.cards[0].base_cost
-                logger.info(f"{card_name} costs {cost}...")
-
-                money = self.player_bot.state.money
-                logger.info(f"money: ${money}, cost: {cost}")
-
-                if money >= cost:
-                    logger.info(f"Bot buys {card_name}...")
-                    self.player_bot.buy(pile.cards[0], self.game)
-                    valid_buy = True
-                    reward = 0.1
-                    break
-
-                else:
-                    logger.info(f"Bot does not have enough money to buy {name}")
-
-        if valid_buy == False:
-            reward = -1
-
-        if self.game.is_over():
-            done = True
-            winners = self.game.get_winners()
-            reward = 1.0 if self.player_bot in winners and len(winners) == 1 else 0.5 if self.player_bot in winners else 0.0
-
-        return reward, done
+            if pile.name in self.card_names:
+                cnt[self.card_names.index(pile.name)] = len(pile)
+        return cnt

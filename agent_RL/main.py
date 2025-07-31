@@ -26,27 +26,6 @@ if __name__ == "__main__":
 
     base_set_cards = BASE_CARDS
 
-    train_buy_phase(
-            cards_used_in_game = base_set_cards,
-            episodes=2,
-            episode_timeout=1,
-            report_interval=1,
-            n_envs=1
-        )
-
-
-    logger.info("----------------------------------------------------")
-    logger.info("----------------------------------------------------")
-    logger.info("----------------------------------------------------")
-    logger.info("----------------------------------------------------")
-    logger.info("FIGURE OUT HOW TO TRAIN BUY PHASE SEPARATELY FROM\n"
-                "ACTION PHASE IN A WAY THAT LETS THE AGENT LEARN\n"
-                "HOW TO USE THE CARDS THAT IT BUYS...\n"
-                "...READ THROUGH NOTES IN CODE...")
-    logger.info("----------------------------------------------------")
-    logger.info("----------------------------------------------------")
-    logger.info("----------------------------------------------------")
-    logger.info("----------------------------------------------------")
 
 
 

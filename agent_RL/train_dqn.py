@@ -69,7 +69,7 @@ def train_buy_phase(env, episodes=2, buffer_size=10_000, batch_size=64):
     target_update  = 10            # sync target every N episodes
 
     for ep in range(episodes):
-        obs, _   = env.reset()
+        obs, _    = env.reset()
         done      = False
         step_ctr  = 0
         ep_reward = 0.0

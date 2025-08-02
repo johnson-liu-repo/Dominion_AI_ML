@@ -11,7 +11,7 @@ import numpy as np
 from pyminion_master.pyminion.expansions import base
 from pyminion_master.pyminion.game import Game
 
-from agent_RL.dominion_env import DominionBuyPhaseEnv
+from agent_RL.wrappers import BuyPhaseEnv
 from agent_RL.dummie_bot import DummieBot
 
 
@@ -32,16 +32,22 @@ def make_env(cards_used_in_game, seed=None):
             random_order=True  # or False for deterministic
         )
 
-        env = DominionBuyPhaseEnv(
-            game = game,
-            player_bot = bot1,
-            all_cards = cards_used_in_game
+        # ------------------------------------------------------------------
+        #  core_env  = underlying Pyminion `Game`
+        #  phase_env = single-decision Gym wrapper we actually train on
+        # ------------------------------------------------------------------
+        core_env  = game
+        phase_env = BuyPhaseEnv(
+            game        = core_env,
+            player_bot  = bot1,
+            card_names  = cards_used_in_game
         )
 
-        # Set Gym-style seed (important for Gym compliance)
-        env.seed(seed)
+        # Reproducibility
+        if seed is not None:
+            phase_env.action_space.seed(seed)
 
-        return env
+        return phase_env
 
     return thunk
 

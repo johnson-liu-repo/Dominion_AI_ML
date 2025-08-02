@@ -44,6 +44,8 @@ class DominionBuyPhaseEnv(gym.Env):
 
     def step(self, action: int):
         assert self.action_space.contains(action), "invalid action index"
+
+        # self.bot.start_buy_phase(self.game)
         reward, _ = self._apply_buy(action)
 
         # --- wrap up the turn -------------------------------------------- #
@@ -67,15 +69,17 @@ class DominionBuyPhaseEnv(gym.Env):
     #  Internal helpers                                                     #
     # --------------------------------------------------------------------- #
     def _start_new_turn(self):
-        """Run start-turn, action-phase (bot has none), treasure-phase."""
         self._turn += 1
         self.bot.start_turn(self.game, is_extra_turn=False)
-        self.bot.start_action_phase(self.game)     # DummieBot no-ops
+        self.bot.start_action_phase(self.game)
+
         self.game.current_phase = self.game.Phase.Buy
+        
         # auto-play all treasures
         for card in list(self.bot.hand.cards):
             if 'Treasure' in card.type:
-                self.bot.exact_play(card, self.game)
+                card.play(self.bot, self.game)
+
 
     # ---------- buy logic ------------------------------------------------- #
     def _apply_buy(self, action_idx: int):

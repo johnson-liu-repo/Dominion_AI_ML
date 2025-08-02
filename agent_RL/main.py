@@ -25,12 +25,8 @@ if __name__ == "__main__":
     logger.info("-------------------------------------")
 
 
-    env = make_env(BASE_CARDS)
-
-    train_buy_phase(env)
-
-
-
+    phase_env = make_env(BASE_CARDS)()      # call the thunk
+    train_buy_phase(phase_env)
 
 ### Notes:
 # 1. Right now, scope is limited to training only a few selected cards. But if we want the agent

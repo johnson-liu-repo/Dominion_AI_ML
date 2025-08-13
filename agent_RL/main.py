@@ -1,14 +1,14 @@
 
 import sys
 
-dominion_dir = 'C:/Users/johns/OneDrive/Desktop/projects/Dominion_AI_ML'
+dominion_dir = 'C:/Users/johns/Desktop/projects/Dominion_AI_ML'
 sys.path.append(dominion_dir)
 
 from pyminion_master.pyminion.expansions import base
 from pyminion_master.pyminion.game import Game
 
 from agent_RL.train_dqn import train_buy_phase
-from agent_RL.card_catalog import BASE_CARDS
+from agent_RL.card_catalog import BASE_CARDS_NAMES
 from agent_RL.dominion_env_factory import make_env
 
 
@@ -25,7 +25,7 @@ if __name__ == "__main__":
     logger.info("-------------------------------------")
 
 
-    phase_env = make_env(BASE_CARDS)()      # call the thunk
+    phase_env = make_env(BASE_CARDS_NAMES)()      # call the thunk
     train_buy_phase(phase_env)
 
 ### Notes:

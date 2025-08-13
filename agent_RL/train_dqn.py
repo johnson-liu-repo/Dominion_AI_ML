@@ -6,7 +6,12 @@ import numpy as np
 import random
 from collections import deque
 
+import logging
+logger = logging.getLogger(__name__)          # re-use global formatter from game.py
+
+
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 #####################################################
 ##### ---> Try different NN architectures. <--- #####
@@ -24,15 +29,19 @@ class DQN(nn.Module):
         )
 
     def forward(self, x):
-        return self.net(x)
+        return self.net(x.to(next(self.parameters()).device))
 
 
 def select_action(obs, policy_net, mask, epsilon, n_actions):
     """Return an int in [0, n_actions).  Mask is a 1/0 numpy array."""
     if random.random() < epsilon:
         # ---------- random but legal ----------
+        logger.info(f"Random action selection...")
         valid_idxs = np.flatnonzero(mask)
-        return int(np.random.choice(valid_idxs))
+        logger.info(f"Valid indices for random selection: {valid_idxs}...")
+        choice = int(np.random.choice(valid_idxs))
+        logger.info(f"Randomly selected action index {choice}...")
+        return choice
 
     # ---------- greedy but legal -------------
     with torch.no_grad():
@@ -49,7 +58,7 @@ def select_action(obs, policy_net, mask, epsilon, n_actions):
 ##################################################################################
 
 
-def train_buy_phase(env, episodes=2, buffer_size=10_000, batch_size=64):
+def train_buy_phase(env, episodes=2, turn_limit=10, buffer_size=10_000, batch_size=64):
     input_dim  = env.observation_space.shape[0]
     n_actions  = env.action_space.n                   #  |card_names| + 1  (pass)
 
@@ -70,18 +79,27 @@ def train_buy_phase(env, episodes=2, buffer_size=10_000, batch_size=64):
 
     for ep in range(episodes):
         obs, _    = env.reset()
+
+        logger.info("card_names -> supply piles mapping:")
+        for name in env.card_names:
+            pile = env._pile_for_card(name)
+            logger.info(f"  {name}  -->  {getattr(pile, 'name', 'UNMATCHED')}")
+            
         done      = False
         step_ctr  = 0
         ep_reward = 0.0
 
-        obs_tensor = torch.tensor(obs, dtype=torch.float32).unsqueeze(0)
+        obs_tensor = torch.tensor(obs, dtype=torch.float32, device=DEVICE).unsqueeze(0)
         with torch.no_grad():
             q_vals = policy_net(obs_tensor)
-        print("Obs shape:", obs_tensor.shape)
-        print("Q-values shape:", q_vals.shape)
+        logger.info(f"Obs shape: {obs_tensor.shape}")
+        logger.info(f"Q-values shape: {q_vals.shape}")
+
+        turn = 0
 
         while not done:
-            mask   = env.valid_action_mask()         #  ← NEW
+            mask   = env.valid_action_mask()
+            logger.info(f"buys={env.bot.state.buys}, money={env.bot.state.money}, legal={np.flatnonzero(mask)}")
             act    = select_action(obs, policy_net, mask, epsilon, n_actions)
 
             next_obs, r, done, _ = env.step(act)
@@ -117,9 +135,15 @@ def train_buy_phase(env, episodes=2, buffer_size=10_000, batch_size=64):
                 loss.backward()
                 opt.step()
 
+            # can extract turn from bot object.
+            turn += 1
+            if turn >= turn_limit:
+                done = True
+                logger.info("Turn limit reached, ending episode.")
+
         # --------------- episode end  -----------------
         epsilon = max(eps_min, epsilon * eps_decay)
-        print(f"Ep {ep:04d} | steps={step_ctr:3d} | epsilon={epsilon:.3f} | reward={ep_reward:.3f}")
+        logger.info(f"Ep {ep:04d} | steps={step_ctr:3d} | epsilon={epsilon:.3f} | reward={ep_reward:.3f}")
 
         if (ep + 1) % target_update == 0:
             target_net.load_state_dict(policy_net.state_dict())

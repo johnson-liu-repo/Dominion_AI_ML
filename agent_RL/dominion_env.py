@@ -2,9 +2,9 @@
 import numpy as np
 import gym
 from gym import spaces
-import logging
 
-logger = logging.getLogger(__name__)          # re-use global formatter from game.py
+import logging
+logger = logging.getLogger(__name__)
 
 
 class DominionBuyPhaseEnv(gym.Env):
@@ -89,18 +89,25 @@ class DominionBuyPhaseEnv(gym.Env):
           • +0.01  valid buy (or pass)
           • -0.01  illegal selection (not enough $, empty pile, mask==0)
         """
+        logger.info(f"{self.bot.player_id} has {self.bot.state.money} money available...")
+        logger.info(f"{self.bot.player_id} has chosen action index {action_idx}...")
+        logger.info(f"The cards are {self.card_names}...\n")
+
         #  mask invalid indices
         mask = self.valid_action_mask()
         if mask[action_idx] == 0:
-            return -0.01, False
+            logger.info(f"Buy phase: {self.bot.player_id} tried illegal action {action_idx} (turn {self._turn})")
+            return -0.1, False
 
         if action_idx == self.pass_idx:         # no purchase
-            return +0.01, True
+            logger.info(f"Buy phase: {self.bot.player_id} passed (turn {self._turn})")
+            return -0.01, True
 
         name = self.card_names[action_idx]
         pile = self.game.supply.get_pile(name)
         try:
             self.bot.buy(pile.cards[0], self.game)
+            logger.info(f"Buy phase: {self.bot.player_id} bought {name} (turn {self._turn})")
             return +0.01, True
         except Exception:                       # money / buys / empty pile
             return -0.01, False
@@ -122,28 +129,51 @@ class DominionBuyPhaseEnv(gym.Env):
         """
         money, buys = self.bot.state.money, self.bot.state.buys
         mask = np.zeros(len(self.card_names) + 1, dtype=np.float32)
+
         if buys == 0:
             mask[self.pass_idx] = 1.0
             return mask
 
         for i, name in enumerate(self.card_names):
-            pile = self.game.supply.get_pile(name)
-            if len(pile) and pile.cards[0].get_cost(self.bot, self.game).money <= money:
+            pile = self._pile_for_card(name)
+            if pile is None:
+                continue  # unmatched => stays illegal
+            affordable = (len(pile) > 0 and pile.cards[0].base_cost.money <= money)
+            if affordable:
                 mask[i] = 1.0
+
         mask[self.pass_idx] = 1.0
         return mask
 
     # ---------- util counts ---------------------------------------------- #
     def _count_deck(self, cards):
         cnt = np.zeros(len(self.card_names), dtype=np.float32)
+        # build a fast map using the same tolerant match
+        name_to_idx = {}
+        for i, name in enumerate(self.card_names):
+            p = self._pile_for_card(name)
+            if p is not None:
+                name_to_idx[p.name] = i  # use the canonical pile name
         for c in cards:
-            if c.name in self.card_names:
-                cnt[self.card_names.index(c.name)] += 1
+            idx = name_to_idx.get(c.name)
+            if idx is not None:
+                cnt[idx] += 1
         return cnt
 
     def _count_supply(self):
         cnt = np.zeros(len(self.card_names), dtype=np.float32)
-        for pile in self.game.supply.piles:
-            if pile.name in self.card_names:
-                cnt[self.card_names.index(pile.name)] = len(pile)
+        for i, name in enumerate(self.card_names):
+            pile = self._pile_for_card(name)
+            if pile is not None:
+                cnt[i] = len(pile)
         return cnt
+
+    def _pile_for_card(self, name: str):
+        """Robustly find the supply pile corresponding to `name`."""
+        ln = name.lower()
+        for pile in self.game.supply.piles:
+            pn = pile.name.lower()
+            # exact match or match against slash-joined multi-name piles
+            if pn == ln or ln in pn.split('/'):
+                return pile
+        return None

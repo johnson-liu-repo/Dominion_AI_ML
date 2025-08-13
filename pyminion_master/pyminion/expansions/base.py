@@ -3,7 +3,7 @@ import math
 from typing import TYPE_CHECKING
 import sys
 
-pyminion_master_dir = 'C:/Users/johns/OneDrive/Desktop/projects/Dominion_AI_ML/pyminion_master'
+pyminion_master_dir = 'C:/Users/johns/Desktop/projects/Dominion_AI_ML/pyminion_master'
 sys.path.append(pyminion_master_dir)
 
 from pyminion.core import AbstractDeck, CardType, Action, Card, ScoreCard, Treasure, Victory, plural
@@ -1313,49 +1313,49 @@ base_set: list[Card] = [
 ]
 
 
-base_set_actions: list[Card] = [
-    artisan,
-    bandit,
-    bureaucrat,
-    cellar,
-    chapel,
-    council_room,
-    festival,
-    gardens,
-    harbinger,
-    laboratory,
-    library,
-    market,
-    merchant,
-    militia,
-    mine,
-    moat,
-    moneylender,
-    poacher,
-    remodel,
-    sentry,
-    smithy,
-    throne_room,
-    vassal,
-    village,
-    witch,
-    workshop,
+base_set_actions_names: list[str] = [
+    "Artisan",
+    "Bandit",
+    "Bureaucrat",
+    "Cellar",
+    "Chapel",
+    "Council Room",
+    "Festival",
+    "Gardens",
+    "Harbinger",
+    "Laboratory",
+    "Library",
+    "Market",
+    "Merchant",
+    "Militia",
+    "Mine",
+    "Moat",
+    "Moneylender",
+    "Poacher",
+    "Remodel",
+    "Sentry",
+    "Smithy",
+    "Throne Room",
+    "Vassal",
+    "Village",
+    "Witch",
+    "Workshop",
 ]
 
-base_set_treasures: list[Card] = [
-    copper,
-    silver,
-    gold
+base_set_treasures_names: list[str] = [
+    "Copper",
+    "Silver",
+    "Gold"
 ]
 
-base_set_victory: list[Card] = [
-    estate,
-    duchy,
-    province
+base_set_victory_names: list[str] = [
+    "Estate",
+    "Duchy",
+    "Province"
 ]
 
-base_set_curses: list[Card] = [
-    curse
+base_set_curses_names: list[str] = [
+    "Curse"
 ]
 
 #######################################################################

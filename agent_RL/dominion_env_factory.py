@@ -2,7 +2,7 @@
 
 import sys
 
-dominion_dir = 'C:/Users/johns/OneDrive/Desktop/projects/Dominion_AI_ML'
+dominion_dir = 'C:/Users/johns/Desktop/projects/Dominion_AI_ML'
 sys.path.append(dominion_dir)
 
 import random

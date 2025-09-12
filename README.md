@@ -1,9 +1,7 @@
+# Dominion AI — Reinforcement Learning for Dominion
 
-# Training Bots Through Reinforcement Learning to Play Dominion
+This project explores reinforcement learning approaches to training bots that can play the deck-building board game *Dominion*. It builds on the [Pyminion](https://github.com/evanofslack/pyminion) library, providing an environment wrapper and experimental reinforcement learning agents.
 
-**May 2025 – Present**
-
-### __Team__
 
 Johnson Liu\
 <sub><small>
@@ -13,15 +11,47 @@ GitHub: [@johnson-liu-code](https://github.com/johnson-liu-code)\
 Email: [liujohnson.jl@gmail.com](mailto:liujohnson.jl@gmail.com)
 </small></sup>
 
-## __Contents__
+<!-- ## __Contents__
 1. [Resources Used](#resources-used)
-    1. [Pyminion Reposity](#pyminion-repository)
-
-## Resources Used
+    1. [Pyminion Reposity](#pyminion-repository) -->
 
 ### Pyminion Repository
 By Evan\
 [https://github.com/evanofslack/pyminion](https://github.com/evanofslack/pyminion)
+
+---
+
+## Project Overview
+
+### Goal
+- Create an AI framework to train reinforcement learning agents to play Dominion.
+
+### Current Progress  
+- **Environment**: Dominion game environment built on top of Pyminion (`dominion_env.py`, `dominion_env_factory.py`, `wrappers.py`).  
+- **Agents**: Includes a `dummie_bot.py` as a baseline and early RL agent implementations (`train_dqn.py`).  
+
+### Future Plans  
+- Extend beyond dummy agents to train working DQN agents against scripted opponents.  
+- Experiment with curriculum learning for progressively harder card sets.  
+- Evaluate agent performance using custom metrics and comparisons to human-style strategies.  
+
+---
+
+## Repository Structure  
+```
+Dominion_AI_ML/
+│── README.md                 # Project documentation
+│── agent_RL/                 # RL environment and agent code
+│   ├── dominion_env.py        # Dominion environment
+│   ├── dominion_env_factory.py# Environment factory
+│   ├── dummie_bot.py          # Simple baseline bot
+│   ├── main.py                # Entry point for experiments
+│   ├── run_dummy_agent.py     # Run dummy agent
+│   ├── train_dqn.py           # Initial DQN training loop
+│   ├── wrappers.py            # Gym-style wrappers
+│── pyminion_master/           # Bundled Pyminion repo
+│── requirements.txt (TBD)
+```
 
 
 ---
@@ -31,12 +61,11 @@ By Evan\
 
     1. treat this as a single player game to simplify the game state
 
-
     1. fixed action space over dynamic action space...
         1. fixed action space
 
             Pros:
-
+           
             1. Keeps the action space size constant → compatible with DQN and most RL frameworks.
             1. The bot can learn from state (e.g., hand cards, coins) not to select invalid actions.
 

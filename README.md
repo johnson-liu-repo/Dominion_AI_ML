@@ -40,16 +40,23 @@ By Evan\
 ## Repository Structure  
 ```
 Dominion_AI_ML/
-│── README.md                 # Project documentation
-│── agent_RL/                 # RL environment and agent code
-│   ├── dominion_env.py        # Dominion environment
-│   ├── dominion_env_factory.py# Environment factory
-│   ├── dummie_bot.py          # Simple baseline bot
-│   ├── main.py                # Entry point for experiments
-│   ├── run_dummy_agent.py     # Run dummy agent
-│   ├── train_dqn.py           # Initial DQN training loop
-│   ├── wrappers.py            # Gym-style wrappers
-│── pyminion_master/           # Bundled Pyminion repo
+│── README.md                  # Project documentation
+│── docs/                      # Reports and research material
+│   ├── reports/
+│   │   └── refactor_report.pdf # Organization refactor summary
+│   └── research/
+│       └── Reinforcement_Learning_for_Board_Game_AI_Comprehensive_Overview.pdf
+│── scripts/                   # Runnable entry points
+│   └── train_agent.py          # Entry point for experiments
+│── src/
+│   └── agent_rl/               # RL environment and agent code
+│       ├── dominion_env.py     # Dominion environment
+│       ├── dominion_env_factory.py # Environment factory
+│       ├── dummie_bot.py       # Simple baseline bot
+│       ├── run_dummy_agent.py  # Run dummy agent
+│       ├── train_dqn.py        # Initial DQN training loop
+│       ├── wrappers.py         # Gym-style wrappers
+│── pyminion_master/            # Bundled Pyminion repo
 │── requirements.txt (TBD)
 ```
 
@@ -133,7 +140,6 @@ Dominion_AI_ML/
             Agent plays one buy phase per turn with only basic treasures and VP cards (e.g., Copper, Silver, Gold, Estate, Duchy, Province).
 
             Goal: learn economy and scoring trade-offs.
-
 
 
 

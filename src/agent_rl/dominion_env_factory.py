@@ -11,8 +11,8 @@ import numpy as np
 from pyminion_master.pyminion.expansions import base
 from pyminion_master.pyminion.game import Game
 
-from agent_RL.wrappers import BuyPhaseEnv
-from agent_RL.dummie_bot import DummieBot
+from agent_rl.wrappers import BuyPhaseEnv
+from agent_rl.dummie_bot import DummieBot
 
 
 def make_env(cards_used_in_game, seed=None):
@@ -50,4 +50,3 @@ def make_env(cards_used_in_game, seed=None):
         return phase_env
 
     return thunk
-

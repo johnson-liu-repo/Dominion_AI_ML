@@ -1,15 +1,17 @@
 
 import sys
+from pathlib import Path
 
-dominion_dir = 'C:/Users/johns/Desktop/projects/Dominion_AI_ML'
-sys.path.append(dominion_dir)
+repo_root = Path(__file__).resolve().parents[1]
+sys.path.append(str(repo_root))
+sys.path.append(str(repo_root / "src"))
 
 from pyminion_master.pyminion.expansions import base
 from pyminion_master.pyminion.game import Game
 
-from agent_RL.train_dqn import train_buy_phase
-from agent_RL.card_catalog import BASE_CARDS_NAMES
-from agent_RL.dominion_env_factory import make_env
+from agent_rl.train_dqn import train_buy_phase
+from agent_rl.card_catalog import BASE_CARDS_NAMES
+from agent_rl.dominion_env_factory import make_env
 
 
 import logging

@@ -11,7 +11,7 @@ from pyminion_master.pyminion.game import Game
 
 from agent_rl.train_dqn import train_buy_phase
 from agent_rl.card_catalog import BASE_CARDS_NAMES
-from agent_rl.dominion_env_factory import make_env
+from src.agent_rl.dominion_env_factory import make_env
 
 
 import logging

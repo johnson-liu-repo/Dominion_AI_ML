@@ -1,6 +1,6 @@
 
 
-from agent_rl.dominion_env import DominionBuyPhaseEnv
+from src.agent_rl.dominion_env import DominionBuyPhaseEnv
 
 
 class BuyPhaseEnv(DominionBuyPhaseEnv):

@@ -15,10 +15,11 @@ class DominionBuyPhaseEnv(gym.Env):
     """
     metadata = {"render_modes": ["ansi"]}
 
-    def __init__(self, game, player_bot, card_names):
+    def __init__(self, game, player_bot, card_names, opponent_bots=None):
         super().__init__()
         self.game        = game
         self.bot         = player_bot          # convenience alias
+        self.opponent_bots = list(opponent_bots) if opponent_bots else []
         self.card_names  = card_names          # ordered list of |K| kingdom cards
         self.pass_idx    = len(card_names)     # final index is "pass / buy nothing"
 
@@ -55,10 +56,16 @@ class DominionBuyPhaseEnv(gym.Env):
         # terminal check (province pile / empty-3) ------------------------- #
         if self.game.is_over():
             self._done = True
-            winners = self.game.get_winners()
-            info = {"won": self.bot in winners}
-            # overwrite reward with final outcome bonus
-            reward += 1.0 if info["won"] else 0.0
+            info = self._terminal_info()
+            reward += info["score_diff"]
+            return self._obs(), reward, True, info
+
+        # play opponents, if any ------------------------------------------ #
+        self._play_opponents()
+        if self.game.is_over():
+            self._done = True
+            info = self._terminal_info()
+            reward += info["score_diff"]
             return self._obs(), reward, True, info
 
         # otherwise start next turn & return obs -------------------------- #
@@ -70,6 +77,7 @@ class DominionBuyPhaseEnv(gym.Env):
     # --------------------------------------------------------------------- #
     def _start_new_turn(self):
         self._turn += 1
+        self.game.current_player = self.bot
         self.bot.start_turn(self.game, is_extra_turn=False)
         self.bot.start_action_phase(self.game)
 
@@ -79,6 +87,26 @@ class DominionBuyPhaseEnv(gym.Env):
         for card in list(self.bot.hand.cards):
             if 'Treasure' in card.type:
                 card.play(self.bot, self.game)
+
+    def _play_opponents(self):
+        for opponent in self.game.get_opponents(self.bot):
+            self.game.current_player = opponent
+            self.game.play_turn(opponent)
+            if self.game.is_over():
+                return
+
+    def _terminal_info(self):
+        agent_score = self.bot.get_victory_points()
+        opponent_scores = [p.get_victory_points() for p in self.game.get_opponents(self.bot)]
+        best_opp = max(opponent_scores) if opponent_scores else 0
+        score_diff = agent_score - best_opp
+        winners = self.game.get_winners()
+        return {
+            "won": self.bot in winners,
+            "agent_score": agent_score,
+            "best_opp_score": best_opp,
+            "score_diff": score_diff,
+        }
 
 
     # ---------- buy logic ------------------------------------------------- #

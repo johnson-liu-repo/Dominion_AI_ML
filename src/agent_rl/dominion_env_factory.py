@@ -15,21 +15,22 @@ from src.agent_rl.wrappers import BuyPhaseEnv
 from src.agent_rl.dummie_bot import DummieBot
 
 
-def make_env(cards_used_in_game, seed=None):
+def make_env(cards_used_in_game, seed=None, opponent_bots=None):
     def thunk():
         if seed is not None:
             random.seed(seed)
             np.random.seed(seed)
 
         bot1 = DummieBot("RL_Agent")
+        opponents = list(opponent_bots) if opponent_bots else []
 
         selected_expansions = [base.curriculum_simple]
-        players = [bot1]
+        players = [bot1] + opponents
 
         game = Game(
             players=players,
             expansions=selected_expansions,
-            random_order=True  # or False for deterministic
+            random_order=False  # True|False for nondeterministic|deterministic
         )
 
         # ------------------------------------------------------------------
@@ -40,7 +41,8 @@ def make_env(cards_used_in_game, seed=None):
         phase_env = BuyPhaseEnv(
             game        = core_env,
             player_bot  = bot1,
-            card_names  = cards_used_in_game
+            card_names  = cards_used_in_game,
+            opponent_bots=opponents
         )
 
         # Reproducibility

@@ -8,6 +8,8 @@ sys.path.append(str(repo_root / "src"))
 
 from pyminion_master.pyminion.expansions import base
 from pyminion_master.pyminion.game import Game
+from pyminion_master.pyminion.bots.examples import BigMoney, BigMoneyUltimate
+
 
 from agent_rl.train_dqn import train_buy_phase
 from agent_rl.card_catalog import BASE_CARDS_NAMES
@@ -26,8 +28,14 @@ if __name__ == "__main__":
     logger.info("---- Training Buy Phase with DQN ----")
     logger.info("-------------------------------------")
 
+    bm = BigMoney()
+    # bm_ultimate = BigMoneyUltimate()
 
-    phase_env = make_env(BASE_CARDS_NAMES)()      # call the thunk
+    phase_env = make_env(
+            cards_used_in_game = BASE_CARDS_NAMES,
+            seed = 4991,
+            opponent_bots = [ bm ]
+        )()
     train_buy_phase(phase_env)
 
 ### Notes:

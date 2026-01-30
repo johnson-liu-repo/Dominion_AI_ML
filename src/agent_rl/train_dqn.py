@@ -97,15 +97,18 @@ def train_buy_phase(env, episodes=2, turn_limit=10, buffer_size=10_000, batch_si
 
         turn = 0
 
+        last_info = {}
         while not done:
             mask   = env.valid_action_mask()
             logger.info(f"buys={env.bot.state.buys}, money={env.bot.state.money}, legal={np.flatnonzero(mask)}")
             act    = select_action(obs, policy_net, mask, epsilon, n_actions)
 
-            next_obs, r, done, _ = env.step(act)
+            next_obs, r, done, info = env.step(act)
+            last_info = info or {}
+            next_mask = env.valid_action_mask() if not done else np.zeros_like(mask)
 
             #  store transition -------------------------------------------------
-            replay.append((obs, act, r, next_obs, done))
+            replay.append((obs, act, r, next_obs, done, next_mask))
             obs        = next_obs
             ep_reward += r
             step_ctr  += 1
@@ -114,19 +117,22 @@ def train_buy_phase(env, episodes=2, turn_limit=10, buffer_size=10_000, batch_si
             if len(replay) >= batch_size:
                 batch = random.sample(replay, batch_size)
                 # unpack and tensorise
-                obs_b, act_b, rew_b, nxt_b, done_b = zip(*batch)
+                obs_b, act_b, rew_b, nxt_b, done_b, nxt_mask_b = zip(*batch)
                 obs_b  = torch.as_tensor(obs_b,  dtype=torch.float32, device=DEVICE)
                 act_b  = torch.as_tensor(act_b,  dtype=torch.long,   device=DEVICE).unsqueeze(1)
                 rew_b  = torch.as_tensor(rew_b,  dtype=torch.float32,device=DEVICE)
                 nxt_b  = torch.as_tensor(nxt_b,  dtype=torch.float32,device=DEVICE)
                 done_b = torch.as_tensor(done_b, dtype=torch.float32,device=DEVICE)
+                nxt_mask_b = torch.as_tensor(nxt_mask_b, dtype=torch.float32, device=DEVICE)
 
                 # Q(s,a)
                 q_sa   = policy_net(obs_b).gather(1, act_b).squeeze()
 
-                # V(s')  (no mask in bootstrapping; agent can learn from it)
+                # V(s')  (mask illegal actions in bootstrapping)
                 with torch.no_grad():
-                    v_nxt = target_net(nxt_b).max(1)[0]
+                    q_nxt = target_net(nxt_b)
+                    q_nxt[nxt_mask_b == 0.0] = -1e9
+                    v_nxt = q_nxt.max(1)[0]
 
                 target = rew_b + gamma * v_nxt * (1.0 - done_b)
                 loss   = loss_fn(q_sa, target)
@@ -143,7 +149,11 @@ def train_buy_phase(env, episodes=2, turn_limit=10, buffer_size=10_000, batch_si
 
         # --------------- episode end  -----------------
         epsilon = max(eps_min, epsilon * eps_decay)
-        logger.info(f"Ep {ep:04d} | steps={step_ctr:3d} | epsilon={epsilon:.3f} | reward={ep_reward:.3f}")
+        score_diff = last_info.get("score_diff")
+        if score_diff is not None:
+            logger.info(f"Ep {ep:04d} | steps={step_ctr:3d} | epsilon={epsilon:.3f} | reward={ep_reward:.3f} | score_diff={score_diff:.1f}")
+        else:
+            logger.info(f"Ep {ep:04d} | steps={step_ctr:3d} | epsilon={epsilon:.3f} | reward={ep_reward:.3f}")
 
         if (ep + 1) % target_update == 0:
             target_net.load_state_dict(policy_net.state_dict())

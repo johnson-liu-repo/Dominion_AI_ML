@@ -1,7 +1,8 @@
-
+"""Factory helpers for building Dominion Gym environments."""
 
 import sys
 
+# NOTE: Local development path used to import the bundled Pyminion package.
 dominion_dir = 'C:/Users/johns/Desktop/projects/Dominion_AI_ML'
 sys.path.append(dominion_dir)
 
@@ -16,6 +17,7 @@ from src.agent_rl.dummie_bot import DummieBot
 
 
 def make_env(cards_used_in_game, seed=None, opponent_bots=None):
+    """Return a thunk that constructs a seeded Dominion buy-phase environment."""
     def thunk():
         if seed is not None:
             random.seed(seed)

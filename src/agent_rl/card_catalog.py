@@ -1,8 +1,9 @@
-
+"""Named card lists for Dominion base set lookups."""
 
 
 import sys
 
+# NOTE: Local development path used to import the bundled Pyminion package.
 dominion_dir = 'C:/Users/john/Desktop/projects/Dominion_AI_ML'
 sys.path.append(dominion_dir)
 
@@ -18,5 +19,5 @@ BASE_CARDS    = BASE_TREASURE + BASE_VICTORY + BASE_CURSE + BASE_ACTION
 BASE_CARDS_C1 = BASE_TREASURE + BASE_VICTORY + BASE_CURSE
 
 if __name__ == "__main__":
-
+    """Placeholder to allow quick ad-hoc inspection of card lists."""
     pass

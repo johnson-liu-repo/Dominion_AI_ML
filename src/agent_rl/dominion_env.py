@@ -3,6 +3,9 @@ import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
 
+
+from pyminion_master.pyminion.core import CardType
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -26,7 +29,7 @@ class DominionBuyPhaseEnv(gym.Env):
         n = len(card_names)
         self.action_space = spaces.Discrete(n + 1)                  # 0..n  (n==pass)
         self.observation_space = spaces.Box(low=0, high=100,
-                                            shape=(2 * n + 3,),     # supply + hand + scalars
+                                            shape=(2 * n + 3,),     # supply + hand + [actions, buys, money]
                                             dtype=np.float32)
 
         # internal flags
@@ -85,7 +88,7 @@ class DominionBuyPhaseEnv(gym.Env):
         
         # auto-play all treasures
         for card in list(self.bot.hand.cards):
-            if 'Treasure' in card.type:
+            if card.type and CardType.Treasure in card.type:
                 card.play(self.bot, self.game)
 
     def _play_opponents(self):
@@ -142,8 +145,8 @@ class DominionBuyPhaseEnv(gym.Env):
 
     # ---------- observation + mask --------------------------------------- #
     def _obs(self):
-        h = self._count_deck(self.bot.hand.cards)
         s = self._count_supply()
+        h = self._count_deck(self.bot.hand.cards)
         scalars = np.array([self.bot.state.actions,
                             self.bot.state.buys,
                             self.bot.state.money], dtype=np.float32)

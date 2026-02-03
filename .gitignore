@@ -1,3 +1,5 @@
+
+# Commons
 __pycache__/
 *.pyc
 *.pyo
@@ -11,3 +13,6 @@ venv/
 # IDEs
 .vscode/
 .idea/
+
+# Logs
+scripts/logs/*

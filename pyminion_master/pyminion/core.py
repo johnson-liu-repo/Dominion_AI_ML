@@ -189,7 +189,8 @@ class Treasure(Card):
     def __init__(self, name: str, cost: int|Cost, type: tuple[CardType, ...], money: int):
         super().__init__(name, cost, type)
         self.money = money
-        self.type = ('Treasure',)
+        # Keep enum tuple for type checks like `CardType.Treasure in card.type`.
+        self.type = (CardType.Treasure,)
 
     def play(self, player: "Player", game: "Game") -> None:
         """

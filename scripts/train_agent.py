@@ -12,7 +12,7 @@ from pyminion_master.pyminion.bots.examples import BigMoney, BigMoneyUltimate
 
 
 from agent_rl.train_dqn import train_buy_phase
-from agent_rl.card_catalog import BASE_CARDS_NAMES
+from agent_rl.card_catalog import BASE_CARDS
 from src.agent_rl.dominion_env_factory import make_env
 
 
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     # bm_ultimate = BigMoneyUltimate()
 
     phase_env = make_env(
-            cards_used_in_game = BASE_CARDS_NAMES,
+            cards_used_in_game = BASE_CARDS,
             seed = 4991,
             opponent_bots = [ bm ]
         )()

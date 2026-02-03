@@ -36,11 +36,11 @@ def select_action(obs, policy_net, mask, epsilon, n_actions):
     """Return an int in [0, n_actions).  Mask is a 1/0 numpy array."""
     if random.random() < epsilon:
         # ---------- random but legal ----------
-        logger.info(f"Random action selection...")
+        # logger.info(f"Random action selection...")
         valid_idxs = np.flatnonzero(mask)
         logger.info(f"Valid indices for random selection: {valid_idxs}...")
         choice = int(np.random.choice(valid_idxs))
-        logger.info(f"Randomly selected action index {choice}...")
+        # logger.info(f"Randomly selected action index {choice}...")
         return choice
 
     # ---------- greedy but legal -------------

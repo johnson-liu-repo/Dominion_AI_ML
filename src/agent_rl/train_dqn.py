@@ -32,13 +32,19 @@ class DQN(nn.Module):
         return self.net(x.to(next(self.parameters()).device))
 
 
-def select_action(obs, policy_net, mask, epsilon, n_actions):
+def select_action(
+        obs,
+        policy_net,
+        mask,
+        epsilon,
+        n_actions
+    ):
     """Return an int in [0, n_actions).  Mask is a 1/0 numpy array."""
     if random.random() < epsilon:
         # ---------- random but legal ----------
         # logger.info(f"Random action selection...")
         valid_idxs = np.flatnonzero(mask)
-        logger.info(f"Valid indices for random selection: {valid_idxs}...")
+        # logger.info(f"Valid indices for random selection: {valid_idxs}...")
         choice = int(np.random.choice(valid_idxs))
         # logger.info(f"Randomly selected action index {choice}...")
         return choice
@@ -58,7 +64,13 @@ def select_action(obs, policy_net, mask, epsilon, n_actions):
 ##################################################################################
 
 
-def train_buy_phase(env, episodes=2, turn_limit=10, buffer_size=10_000, batch_size=64):
+def train_buy_phase(
+        env,
+        episodes=1,
+        turn_limit=1,
+        buffer_size=10_000,
+        batch_size=64
+    ):
     input_dim  = env.observation_space.shape[0]
     n_actions  = env.action_space.n                   #  |card_names| + 1  (pass)
 
@@ -97,14 +109,14 @@ def train_buy_phase(env, episodes=2, turn_limit=10, buffer_size=10_000, batch_si
 
         turn = 0
 
-        last_info = {}
+        # last_info = {}
         while not done:
             mask   = env.valid_action_mask()
-            logger.info(f"buys={env.bot.state.buys}, money={env.bot.state.money}, legal={np.flatnonzero(mask)}")
+            logger.info(f"Money: {env.bot.state.money}\nBuys: {env.bot.state.buys}\nLegal: {np.flatnonzero(mask)}")
             act    = select_action(obs, policy_net, mask, epsilon, n_actions)
 
-            next_obs, r, done, info = env.step(act)
-            last_info = info or {}
+            next_obs, r, done, _ = env.step(act)
+            # last_info = info or {}
             next_mask = env.valid_action_mask() if not done else np.zeros_like(mask)
 
             #  store transition -------------------------------------------------
@@ -149,7 +161,23 @@ def train_buy_phase(env, episodes=2, turn_limit=10, buffer_size=10_000, batch_si
 
         # --------------- episode end  -----------------
         epsilon = max(eps_min, epsilon * eps_decay)
-        score_diff = last_info.get("score_diff")
+        # score_diff = last_info.get("score_diff")
+
+        RL_agent_score = env.bot.get_victory_points()
+
+        opponents = [bot for bot in env.opponent_bots if bot != env.bot]
+        opponent_scores = [opp.get_victory_points for opp in opponents]
+
+        logger.info("\n\n=== Episode Summary ===")
+
+        logger.info(f"RL agent score: {RL_agent_score}")
+        logger.info("Opponent scores:")
+        for i, opp_score in enumerate(opponent_scores):
+            logger.info(f"  {opponents[i].player_id}: {opp_score}")
+
+        score_diff = np.average([RL_agent_score - opp_score() for opp_score in opponent_scores]) if opponent_scores else None
+        ep_reward += score_diff if score_diff is not None else 0.0
+
         if score_diff is not None:
             logger.info(f"Ep {ep:04d} | steps={step_ctr:3d} | epsilon={epsilon:.3f} | reward={ep_reward:.3f} | score_diff={score_diff:.1f}")
         else:

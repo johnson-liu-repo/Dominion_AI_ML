@@ -82,14 +82,10 @@ class DominionBuyPhaseEnv(gym.Env):
         self._turn += 1
         self.game.current_player = self.bot
         self.bot.start_turn(self.game, is_extra_turn=False)
+        self.bot.start_treasure_phase(self.game)
         self.bot.start_action_phase(self.game)
 
         self.game.current_phase = self.game.Phase.Buy
-        
-        # auto-play all treasures
-        for card in list(self.bot.hand.cards):
-            if card.type and CardType.Treasure in card.type:
-                card.play(self.bot, self.game)
 
     def _play_opponents(self):
         for opponent in self.game.get_opponents(self.bot):
@@ -120,9 +116,9 @@ class DominionBuyPhaseEnv(gym.Env):
           • +0.01  valid buy (or pass)
           • -0.01  illegal selection (not enough $, empty pile, mask==0)
         """
-        logger.info(f"{self.bot.player_id} has {self.bot.state.money} money available...")
+        # logger.info(f"{self.bot.player_id} has {self.bot.state.money} money available...")
         logger.info(f"{self.bot.player_id} has chosen action index {action_idx}...")
-        logger.info(f"The cards are {self.card_names}...\n")
+        # logger.info(f"The cards are {self.card_names}...\n")
 
         #  mask invalid indices
         mask = self.valid_action_mask()

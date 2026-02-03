@@ -1,4 +1,5 @@
-# dominion_env.py
+"""Gymnasium environment wrapper for Dominion buy-phase training."""
+
 import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
@@ -40,6 +41,7 @@ class DominionBuyPhaseEnv(gym.Env):
     #  Public API                                                           #
     # --------------------------------------------------------------------- #
     def reset(self, *, seed=None, options=None):
+        """Reset the underlying game and return the initial observation."""
         super().reset(seed=seed)
         self.game.start()                   # full game restart
         self._turn, self._done = 0, False
@@ -47,6 +49,7 @@ class DominionBuyPhaseEnv(gym.Env):
         return self._obs(), {}
 
     def step(self, action: int):
+        """Apply a buy action and advance the game by one full turn."""
         assert self.action_space.contains(action), "invalid action index"
 
         # self.bot.start_buy_phase(self.game)
@@ -79,6 +82,7 @@ class DominionBuyPhaseEnv(gym.Env):
     #  Internal helpers                                                     #
     # --------------------------------------------------------------------- #
     def _start_new_turn(self):
+        """Advance to the buy phase for the controlled agent."""
         self._turn += 1
         self.game.current_player = self.bot
         self.bot.start_turn(self.game, is_extra_turn=False)
@@ -88,6 +92,7 @@ class DominionBuyPhaseEnv(gym.Env):
         self.game.current_phase = self.game.Phase.Buy
 
     def _play_opponents(self):
+        """Play full turns for all opponents before the next agent turn."""
         for opponent in self.game.get_opponents(self.bot):
             self.game.current_player = opponent
             self.game.play_turn(opponent)
@@ -95,6 +100,7 @@ class DominionBuyPhaseEnv(gym.Env):
                 return
 
     def _terminal_info(self):
+        """Compute terminal win/loss metadata for logging and reward shaping."""
         agent_score = self.bot.get_victory_points()
         opponent_scores = [p.get_victory_points() for p in self.game.get_opponents(self.bot)]
         best_opp = max(opponent_scores) if opponent_scores else 0
@@ -141,6 +147,7 @@ class DominionBuyPhaseEnv(gym.Env):
 
     # ---------- observation + mask --------------------------------------- #
     def _obs(self):
+        """Build observation vector of supply, hand, and scalar state."""
         s = self._count_supply()
         h = self._count_deck(self.bot.hand.cards)
         scalars = np.array([self.bot.state.actions,
@@ -174,6 +181,7 @@ class DominionBuyPhaseEnv(gym.Env):
 
     # ---------- util counts ---------------------------------------------- #
     def _count_deck(self, cards):
+        """Count card occurrences in a list of cards aligned to card_names."""
         cnt = np.zeros(len(self.card_names), dtype=np.float32)
         # build a fast map using the same tolerant match
         name_to_idx = {}
@@ -188,6 +196,7 @@ class DominionBuyPhaseEnv(gym.Env):
         return cnt
 
     def _count_supply(self):
+        """Count remaining cards in each supply pile."""
         cnt = np.zeros(len(self.card_names), dtype=np.float32)
         for i, name in enumerate(self.card_names):
             pile = self._pile_for_card(name)

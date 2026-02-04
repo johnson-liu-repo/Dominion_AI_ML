@@ -1,9 +1,10 @@
-
+"""Baseline Dominion bot used for debugging and simple opponents."""
 
 import logging
 from typing import Iterator
 import sys
 
+# NOTE: Local development path used to import the bundled Pyminion package.
 dominion_dir = 'C:/Users/johns/Desktop/projects/Dominion_AI_ML'
 sys.path.append(dominion_dir)
 
@@ -25,13 +26,16 @@ class DummieBotDecider(BotDecider):
 
     # The bot has no action priority.
     def action_priority(self, player: Player, game: Game) -> Iterator[Card]:
+        """Return an empty action priority list to skip action cards."""
         return iter([])
 
     def buy_priority(self, player: Player, game: Game) -> Iterator[Card]:
+        """Return an empty buy priority list (buys handled elsewhere)."""
         return iter([])
 
 
 class DummieBot(Bot):
+    """Minimal bot wrapper that uses DummieBotDecider."""
     def __init__(
         self,
         player_id: str = "dummie_bot",

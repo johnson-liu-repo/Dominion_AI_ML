@@ -1,3 +1,4 @@
+"""Minimal DQN training loop for the Dominion buy-phase environment."""
 
 import torch
 import torch.nn as nn
@@ -17,6 +18,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 #####################################################
 
 class DQN(nn.Module):
+    """Simple MLP policy/value network for discrete action selection."""
     def __init__(self, input_dim, output_dim):
         super().__init__()
         self.net = nn.Sequential(
@@ -28,6 +30,7 @@ class DQN(nn.Module):
         )
 
     def forward(self, x):
+        """Forward pass with device-aware tensor conversion."""
         return self.net(x.to(next(self.parameters()).device))
 
 
@@ -38,7 +41,16 @@ def select_action(
         epsilon,
         n_actions
     ):
-    """Return an int in [0, n_actions).  Mask is a 1/0 numpy array."""
+    """
+    Choose an action index with epsilon-greedy exploration.
+
+    Args:
+        obs: Current observation vector.
+        policy_net: Torch model used to score actions.
+        mask: 1/0 numpy array indicating legal actions.
+        epsilon: Probability of random action.
+        n_actions: Total number of action slots (including pass).
+    """
     if random.random() < epsilon:
         # ---------- random but legal ----------
         # logger.info(f"Random action selection...")

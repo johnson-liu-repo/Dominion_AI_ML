@@ -1,11 +1,8 @@
+"""Helpers for manually stepping through a dummy agent turn."""
 
-
-
-
-### This isn't used in training. This is used to have the agent play a game
-### to see what it does ( for development and testing purposes... ).
 
 def run_dummy_agent(env, render=True):
+    """Run a single dummy-agent turn in a multi-phase environment."""
     obs = env.reset()
     done = False
 
@@ -23,7 +20,7 @@ def run_dummy_agent(env, render=True):
             choice = env.action_spaces[env.phase].sample()
             print(f"Choice: phase {env.phase}, option {choice}...")
         else:
-            choice = None # <--- Buy phase?
+            choice = None  # <--- Buy phase?
             print(f"Choice: phase {env.phase}...")
 
         obs, reward, done, _ = env.step(choice)

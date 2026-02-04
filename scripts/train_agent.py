@@ -35,14 +35,14 @@ if __name__ == "__main__":
 
     training_configuration = {
         'env': phase_env,
-        'episodes': 2,          # total number of episodes to train
-        'turn_limit': 10,        # max turns per episode
+        'episodes': 200000,      # total number of episodes to train
+        'turn_limit': 250,       # max turns per episode
         'batch_size': 64,        # batch size for optimization
         'gamma': 0.99,           # discount factor
-        'epsilon': 1.0,        # starting epsilon for epsilon-greedy
-        'eps_decay': 0.995,      # epsilon decay rate per episode
-        'eps_min': 0.1,          # minimum epsilon
-        'target_update': 10      # sync target network every N episodes
+        'epsilon': 1.0,          # starting epsilon for epsilon-greedy
+        'eps_decay': 0.9995,     # epsilon decay rate per step
+        'eps_min': 0.05,         # minimum epsilon
+        'target_update': 1000    # sync target network every N steps
     }
 
     train_buy_phase(training_configuration)

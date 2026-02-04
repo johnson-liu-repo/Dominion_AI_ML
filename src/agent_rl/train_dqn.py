@@ -17,21 +17,42 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 ##### ---> Try different NN architectures. <--- #####
 #####################################################
 
-class DQN(nn.Module):
-    """Simple MLP policy/value network for discrete action selection."""
+class DuelingDQN(nn.Module):
+    """Dueling network with a 3-layer MLP trunk for discrete action selection."""
     def __init__(self, input_dim, output_dim):
         super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(input_dim, 128),
+        self.trunk = nn.Sequential(
+            nn.LayerNorm(input_dim),
+            nn.Linear(input_dim, 256),
             nn.ReLU(),
+            nn.Linear(256, 256),
+            nn.ReLU(),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+        )
+        self.value_head = nn.Sequential(
             nn.Linear(128, 128),
             nn.ReLU(),
-            nn.Linear(128, output_dim)
+            nn.Linear(128, 1),
+        )
+        self.adv_head = nn.Sequential(
+            nn.Linear(128, 128),
+            nn.ReLU(),
+            nn.Linear(128, output_dim),
         )
 
     def forward(self, x):
         """Forward pass with device-aware tensor conversion."""
-        return self.net(x.to(next(self.parameters()).device))
+        squeeze = False
+        if x.dim() == 1:
+            x = x.unsqueeze(0)
+            squeeze = True
+        x = x.to(next(self.parameters()).device)
+        h = self.trunk(x)
+        v = self.value_head(h)
+        a = self.adv_head(h)
+        q = v + (a - a.mean(dim=1, keepdim=True))
+        return q.squeeze(0) if squeeze else q
 
 
 def select_action(
@@ -65,7 +86,10 @@ def select_action(
         q = policy_net(torch.as_tensor(obs, dtype=torch.float32, device=DEVICE))
         # put -inf on illegal indices so argmax ignores them
         illegal = (mask == 0.0)
-        q[illegal] = -1e9
+        if q.dim() == 1:
+            q[illegal] = -1e9
+        else:
+            q[:, illegal] = -1e9
         return int(torch.argmax(q).item())
 
 
@@ -81,28 +105,30 @@ def train_buy_phase(
     ):
 
     env          = config['env']
-    episodes     = config.get('episodes', 500)
-    turn_limit   = config.get('turn_limit', 50)
+    episodes     = config.get('episodes', 200_000)
+    turn_limit   = config.get('turn_limit', 250)
     batch_size   = config.get('batch_size', 64)
     gamma        = config.get('gamma', 0.99)
     epsilon      = config.get('epsilon', 1.0)
-    eps_decay    = config.get('eps_decay', 0.995)
-    eps_min      = config.get('eps_min', 0.1)
-    target_update= config.get('target_update', 10)
+    eps_decay    = config.get('eps_decay', 0.9995)
+    eps_min      = config.get('eps_min', 0.05)
+    target_update= config.get('target_update', 1_000)
 
 
     logger = configure_training_logging()
     input_dim  = env.observation_space.shape[0]
     n_actions  = env.action_space.n                   #  |card_names| + 1 (pass)
 
-    policy_net = DQN(input_dim, n_actions).to(DEVICE)
-    target_net = DQN(input_dim, n_actions).to(DEVICE)
+    policy_net = DuelingDQN(input_dim, n_actions).to(DEVICE)
+    target_net = DuelingDQN(input_dim, n_actions).to(DEVICE)
     target_net.load_state_dict(policy_net.state_dict())
     target_net.eval()
 
     opt      = optim.Adam(policy_net.parameters(), lr=1e-3)
     loss_fn  = nn.MSELoss()
     replay   = deque(maxlen=buffer_size)
+
+    global_step = 0
 
     for ep in range(episodes):
         logger.info(f"\n=== Starting episode {ep:04d} ===")
@@ -140,6 +166,9 @@ def train_buy_phase(
             obs        = next_obs
             ep_reward += r
             step_ctr  += 1
+            global_step += 1
+
+            epsilon = max(eps_min, epsilon * eps_decay)
 
             #  ----------------------  SGD update  -----------------------------
             if len(replay) >= batch_size:
@@ -156,11 +185,14 @@ def train_buy_phase(
                 # Q(s,a)
                 q_sa   = policy_net(obs_b).gather(1, act_b).squeeze()
 
-                # V(s')  (mask illegal actions in bootstrapping)
+                # Double DQN target (mask illegal actions before argmax)
                 with torch.no_grad():
-                    q_nxt = target_net(nxt_b)
-                    q_nxt[nxt_mask_b == 0.0] = -1e9
-                    v_nxt = q_nxt.max(1)[0]
+                    q_online = policy_net(nxt_b)
+                    q_online[nxt_mask_b == 0.0] = -1e9
+                    next_act = q_online.argmax(1, keepdim=True)
+
+                    q_target = target_net(nxt_b)
+                    v_nxt = q_target.gather(1, next_act).squeeze(1)
 
                 target = rew_b + gamma * v_nxt * (1.0 - done_b)
                 loss   = loss_fn(q_sa, target)
@@ -169,6 +201,9 @@ def train_buy_phase(
                 loss.backward()
                 opt.step()
 
+            if global_step % target_update == 0:
+                target_net.load_state_dict(policy_net.state_dict())
+
             # can extract turn from bot object.
             turn += 1
             if turn >= turn_limit:
@@ -176,9 +211,6 @@ def train_buy_phase(
                 # logger.info("Turn limit reached, ending episode.")
 
         # --------------- episode end  -----------------
-        epsilon = max(eps_min, epsilon * eps_decay)
-        # score_diff = last_info.get("score_diff")
-
         RL_agent_score = env.bot.get_victory_points()
 
         opponents = [bot for bot in env.opponent_bots if bot != env.bot]
@@ -199,5 +231,3 @@ def train_buy_phase(
         else:
             logger.info(f"Ep {ep:04d} | steps={step_ctr:3d} | epsilon={epsilon:.3f} | reward={ep_reward:.3f}")
 
-        if (ep + 1) % target_update == 0:
-            target_net.load_state_dict(policy_net.state_dict())

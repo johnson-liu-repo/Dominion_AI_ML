@@ -6,8 +6,9 @@ from gymnasium import spaces
 
 from pyminion_master.pyminion.core import CardType
 
-import logging
-logger = logging.getLogger(__name__)
+from agent_rl.logging_utils import get_train_logger
+
+logger = get_train_logger()
 
 
 class DominionBuyPhaseEnv(gym.Env):
@@ -82,6 +83,7 @@ class DominionBuyPhaseEnv(gym.Env):
         self._turn += 1
         self.game.current_player = self.bot
         self.bot.start_turn(self.game, is_extra_turn=False)
+        logger.info(f"Hand ({self.bot.player_id}): {self.bot.hand}")
         self.bot.start_treasure_phase(self.game)
         self.bot.start_action_phase(self.game)
 
@@ -89,8 +91,20 @@ class DominionBuyPhaseEnv(gym.Env):
 
     def _play_opponents(self):
         for opponent in self.game.get_opponents(self.bot):
+            logger.info(f"Hand ({opponent.player_id}): {opponent.hand}")
             self.game.current_player = opponent
             self.game.play_turn(opponent)
+            buys = [
+                card for phase, card in opponent.last_turn_gains
+                if phase == self.game.Phase.Buy
+            ]
+            if buys:
+                for card in buys:
+                    logger.info(
+                        f"Buy phase: {opponent.player_id} bought {card} (turn {self._turn})"
+                    )
+            else:
+                logger.info(f"Buy phase: {opponent.player_id} passed (turn {self._turn})")
             if self.game.is_over():
                 return
 
@@ -117,13 +131,13 @@ class DominionBuyPhaseEnv(gym.Env):
           • -0.01  illegal selection (not enough $, empty pile, mask==0)
         """
         # logger.info(f"{self.bot.player_id} has {self.bot.state.money} money available...")
-        logger.info(f"{self.bot.player_id} has chosen action index {action_idx}...")
+        # logger.info(f"{self.bot.player_id} has chosen action index {action_idx}...")
         # logger.info(f"The cards are {self.card_names}...\n")
 
         #  mask invalid indices
         mask = self.valid_action_mask()
         if mask[action_idx] == 0:
-            logger.info(f"Buy phase: {self.bot.player_id} tried illegal action {action_idx} (turn {self._turn})")
+            logger.debug(f"Buy phase: {self.bot.player_id} tried illegal action {action_idx} (turn {self._turn})")
             return -0.1, False
 
         if action_idx == self.pass_idx:         # no purchase

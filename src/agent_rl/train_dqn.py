@@ -6,8 +6,7 @@ import numpy as np
 import random
 from collections import deque
 
-import logging
-logger = logging.getLogger(__name__)          # re-use global formatter from game.py
+from agent_rl.logging_utils import configure_training_logging
 
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -65,14 +64,24 @@ def select_action(
 
 
 def train_buy_phase(
-        env,
-        episodes=1,
-        turn_limit=1,
-        buffer_size=10_000,
-        batch_size=64
+        config,
+        buffer_size=10000
     ):
+
+    env          = config['env']
+    episodes     = config.get('episodes', 500)
+    turn_limit   = config.get('turn_limit', 50)
+    batch_size   = config.get('batch_size', 64)
+    gamma        = config.get('gamma', 0.99)
+    epsilon      = config.get('epsilon', 1.0)
+    eps_decay    = config.get('eps_decay', 0.995)
+    eps_min      = config.get('eps_min', 0.1)
+    target_update= config.get('target_update', 10)
+
+
+    logger = configure_training_logging()
     input_dim  = env.observation_space.shape[0]
-    n_actions  = env.action_space.n                   #  |card_names| + 1  (pass)
+    n_actions  = env.action_space.n                   #  |card_names| + 1 (pass)
 
     policy_net = DQN(input_dim, n_actions).to(DEVICE)
     target_net = DQN(input_dim, n_actions).to(DEVICE)
@@ -83,19 +92,14 @@ def train_buy_phase(
     loss_fn  = nn.MSELoss()
     replay   = deque(maxlen=buffer_size)
 
-    gamma          = 0.99
-    epsilon        = 1.0
-    eps_decay      = 0.995
-    eps_min        = 0.1
-    target_update  = 10            # sync target every N episodes
-
     for ep in range(episodes):
+        logger.info(f"\n=== Starting episode {ep:04d} ===")
         obs, _    = env.reset()
 
-        logger.info("card_names -> supply piles mapping:")
+        # logger.info("card_names -> supply piles mapping:")
         for name in env.card_names:
             pile = env._pile_for_card(name)
-            logger.info(f"  {name}  -->  {getattr(pile, 'name', 'UNMATCHED')}")
+            # logger.info(f"  {name}  -->  {getattr(pile, 'name', 'UNMATCHED')}")
             
         done      = False
         step_ctr  = 0
@@ -104,15 +108,15 @@ def train_buy_phase(
         obs_tensor = torch.tensor(obs, dtype=torch.float32, device=DEVICE).unsqueeze(0)
         with torch.no_grad():
             q_vals = policy_net(obs_tensor)
-        logger.info(f"Obs shape: {obs_tensor.shape}")
-        logger.info(f"Q-values shape: {q_vals.shape}")
+        # logger.info(f"Obs shape: {obs_tensor.shape}")
+        # logger.info(f"Q-values shape: {q_vals.shape}")
 
         turn = 0
 
         # last_info = {}
         while not done:
             mask   = env.valid_action_mask()
-            logger.info(f"Money: {env.bot.state.money}\nBuys: {env.bot.state.buys}\nLegal: {np.flatnonzero(mask)}")
+            # logger.info(f"Money: {env.bot.state.money}\nBuys: {env.bot.state.buys}\nLegal: {np.flatnonzero(mask)}")
             act    = select_action(obs, policy_net, mask, epsilon, n_actions)
 
             next_obs, r, done, _ = env.step(act)
@@ -157,7 +161,7 @@ def train_buy_phase(
             turn += 1
             if turn >= turn_limit:
                 done = True
-                logger.info("Turn limit reached, ending episode.")
+                # logger.info("Turn limit reached, ending episode.")
 
         # --------------- episode end  -----------------
         epsilon = max(eps_min, epsilon * eps_decay)
@@ -166,16 +170,16 @@ def train_buy_phase(
         RL_agent_score = env.bot.get_victory_points()
 
         opponents = [bot for bot in env.opponent_bots if bot != env.bot]
-        opponent_scores = [opp.get_victory_points for opp in opponents]
+        opponent_scores = [opp.get_victory_points() for opp in opponents]
 
-        logger.info("\n\n=== Episode Summary ===")
+        logger.info("\n\n--- Episode Summary ---")
 
         logger.info(f"RL agent score: {RL_agent_score}")
         logger.info("Opponent scores:")
         for i, opp_score in enumerate(opponent_scores):
             logger.info(f"  {opponents[i].player_id}: {opp_score}")
 
-        score_diff = np.average([RL_agent_score - opp_score() for opp_score in opponent_scores]) if opponent_scores else None
+        score_diff = np.average([RL_agent_score - opp_score for opp_score in opponent_scores]) if opponent_scores else None
         ep_reward += score_diff if score_diff is not None else 0.0
 
         if score_diff is not None:

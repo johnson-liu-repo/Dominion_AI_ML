@@ -13,20 +13,16 @@ from pyminion_master.pyminion.bots.examples import BigMoney, BigMoneyUltimate
 
 from agent_rl.train_dqn import train_buy_phase
 from agent_rl.card_catalog import BASE_CARDS
+from agent_rl.logging_utils import configure_training_logging
 from src.agent_rl.dominion_env_factory import make_env
 
 
-import logging
-logger = logging.getLogger()
-
-
 if __name__ == "__main__":
+    # logger.info("-------------------------------------")
+    # logger.info("---- Training Buy Phase with DQN ----")
+    # logger.info("-------------------------------------")
 
-  
-    # Train here...
-    logger.info("-------------------------------------")
-    logger.info("---- Training Buy Phase with DQN ----")
-    logger.info("-------------------------------------")
+    configure_training_logging()
 
     bm = BigMoney()
     # bm_ultimate = BigMoneyUltimate()
@@ -36,7 +32,20 @@ if __name__ == "__main__":
             seed = 4991,
             opponent_bots = [ bm ]
         )()
-    train_buy_phase(phase_env)
+
+    training_configuration = {
+        'env': phase_env,
+        'episodes': 2,          # total number of episodes to train
+        'turn_limit': 10,        # max turns per episode
+        'batch_size': 64,        # batch size for optimization
+        'gamma': 0.99,           # discount factor
+        'epsilon': 1.0,        # starting epsilon for epsilon-greedy
+        'eps_decay': 0.995,      # epsilon decay rate per episode
+        'eps_min': 0.1,          # minimum epsilon
+        'target_update': 10      # sync target network every N episodes
+    }
+
+    train_buy_phase(training_configuration)
 
 ### Notes:
 # 1. Right now, scope is limited to training only a few selected cards. But if we want the agent

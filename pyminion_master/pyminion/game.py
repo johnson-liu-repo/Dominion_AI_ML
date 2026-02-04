@@ -195,13 +195,13 @@ class Game:
         return Supply(basic_score_piles, basic_treasure_piles, kingdom_piles)
 
     def start(self) -> None:
-        logger.info("\nStarting Game...\n")
+        # logger.info("\nStarting Game...\n")
 
         self.trash.cards.clear()
         self.effect_registry.reset()
 
         self.supply = self._create_supply()
-        logger.info(self.supply.get_pretty_string(self.players[0], self))
+        # logger.info(self.supply.get_pretty_string(self.players[0], self))
 
         for card in self.all_game_cards:
             card.set_up(self)
@@ -221,7 +221,7 @@ class Game:
             player.hand.on_remove = lambda card, player=player: self.effect_registry.on_hand_remove(player, card, self)
             player.deck.on_shuffle = lambda player=player: self.effect_registry.on_shuffle(player, self)
             player.discard_pile = DiscardPile(self.start_deck[:])
-            logger.info(f"\n{player} starts with {player.discard_pile}")
+            # logger.info(f"\n{player} starts with {player.discard_pile}")
             player.draw(5)
 
     def is_over(self) -> bool:

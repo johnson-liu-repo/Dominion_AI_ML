@@ -121,7 +121,8 @@ class Player:
         self,
         num_cards: int = 1,
         destination: AbstractDeck|None = None,
-        silent: bool = False,
+        # silent: bool = False,
+        silent: bool = True,
     ) -> None:
         """
         Draw cards from deck and add them to the specified destination.

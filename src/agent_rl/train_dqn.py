@@ -1,5 +1,6 @@
 """Minimal DQN training loop for the Dominion buy-phase environment."""
 
+import sys
 import time
 from pathlib import Path
 from collections import deque
@@ -20,6 +21,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 #####################################################
 ##### ---> Try different NN architectures. <--- #####
 #####################################################
+
 
 class DuelingDQN(nn.Module):
     """Dueling network with a 3-layer MLP trunk for discrete action selection."""
@@ -123,6 +125,8 @@ def train_buy_phase(
     checkpoint_every = config.get('checkpoint_every', 100)
     latest_every = config.get('latest_every', 10)
     save_turns   = config.get('save_turns', True)
+    save_turns_every = config.get('save_turns_every', 1)
+    progress_bar = config.get('progress_bar', True)
 
 
     # logger = configure_training_logging()
@@ -144,6 +148,7 @@ def train_buy_phase(
 
     global_step = 0
     start_episode = 0
+    start_time = time.time()
 
     if resume_from:
         payload = load_checkpoint(
@@ -157,6 +162,7 @@ def train_buy_phase(
         global_step = payload.get("global_step", global_step)
         start_episode = payload.get("episode", start_episode) + 1
 
+    total_episodes = max(0, episodes - start_episode)
     for ep in range(start_episode, episodes):
         # logger.info(f"\n=== Starting episode {ep:04d} ===")
         obs, _    = env.reset()
@@ -268,8 +274,12 @@ def train_buy_phase(
             "timestamp": time.time(),
         })
 
+        if hasattr(env, "game") and hasattr(env.game, "players"):
+            writer.log_final_decks(episode_id, env.game.players)
+
         turn_events = env.consume_turn_events()
-        if save_turns:
+        should_save_turns = save_turns and save_turns_every and (episode_id % save_turns_every == 0)
+        if should_save_turns:
             for event in turn_events:
                 event["episode"] = episode_id
             writer.write_turns(episode_id, turn_events)
@@ -297,3 +307,5 @@ def train_buy_phase(
             ckpt_path = writer.save_checkpoint(payload, f"checkpoint_ep_{episode_id:06d}")
             writer.log_weights_checkpoint(episode_id, ckpt_path)
 
+    if progress_bar:
+        pass

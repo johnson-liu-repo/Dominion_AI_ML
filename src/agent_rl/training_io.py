@@ -2,8 +2,9 @@
 
 import csv
 import json
+from collections import Counter
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 import torch
 
@@ -25,6 +26,16 @@ def _safe_int_suffix(name: str, prefix: str) -> Optional[int]:
         return None
     suffix = name[len(prefix):]
     return int(suffix) if suffix.isdigit() else None
+
+
+def _count_card_names(cards: Iterable[Any]) -> Dict[str, int]:
+    counts: Counter = Counter()
+    for card in cards:
+        name = getattr(card, "name", None)
+        if name is None:
+            name = str(card)
+        counts[str(name)] += 1
+    return dict(sorted(counts.items(), key=lambda item: item[0]))
 
 
 def resolve_run_dir(
@@ -96,6 +107,12 @@ class TrainingRunWriter:
                 writer = csv.DictWriter(f, fieldnames=["episode", "checkpoint"])
                 writer.writeheader()
 
+        # Initialize the final decks JSON file if it does not exist yet.
+        self.final_decks_json = self.run_dir / "final_decks.json"
+        if not self.final_decks_json.exists():
+            with self.final_decks_json.open("w", encoding="utf-8") as f:
+                json.dump([], f, ensure_ascii=True, indent=2)
+
     def log_episode(self, row: Dict[str, Any]) -> None:
         """Append a single episode summary row to the CSV."""
         with self.episode_csv.open("a", newline="") as f:
@@ -121,6 +138,37 @@ class TrainingRunWriter:
         with self.weights_index.open("a", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=["episode", "checkpoint"])
             writer.writerow({"episode": episode_idx, "checkpoint": str(checkpoint_path)})
+
+    def log_final_decks(self, episode_idx: int, players: Iterable[Any]) -> Path:
+        """Append final deck contents for all players to final_decks.json."""
+        entry = {
+            "episode": int(episode_idx),
+            "players": [],
+        }
+        for idx, player in enumerate(players):
+            player_id = getattr(player, "player_id", "") or f"player_{idx}"
+            cards_iter = player.get_all_cards() if hasattr(player, "get_all_cards") else []
+            counts = _count_card_names(cards_iter)
+            entry["players"].append({
+                "player_id": player_id,
+                "total_cards": int(sum(counts.values())),
+                "cards": counts,
+            })
+
+        data: List[Dict[str, Any]] = []
+        if self.final_decks_json.exists():
+            try:
+                with self.final_decks_json.open("r", encoding="utf-8") as f:
+                    loaded = json.load(f)
+                if isinstance(loaded, list):
+                    data = loaded
+            except json.JSONDecodeError:
+                data = []
+
+        data.append(entry)
+        with self.final_decks_json.open("w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=True, indent=2)
+        return self.final_decks_json
 
 
 def load_checkpoint(

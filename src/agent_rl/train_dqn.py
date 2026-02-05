@@ -2,6 +2,7 @@
 
 import sys
 import time
+import shutil
 from pathlib import Path
 from collections import deque
 import random
@@ -16,6 +17,103 @@ from agent_rl.training_io import TrainingRunWriter, load_checkpoint, resolve_run
 
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def _format_seconds(seconds):
+    if seconds is None or seconds == float("inf"):
+        return "?"
+    seconds = max(0, int(seconds))
+    mins, secs = divmod(seconds, 60)
+    hours, mins = divmod(mins, 60)
+    if hours:
+        return f"{hours:d}h{mins:02d}m{secs:02d}s"
+    if mins:
+        return f"{mins:d}m{secs:02d}s"
+    return f"{secs:d}s"
+
+
+class EpisodeProgress:
+    def __init__(self, total_episodes, start_time, bar_width=30, stream=None):
+        self.total_episodes = max(0, int(total_episodes))
+        self.start_time = start_time
+        self.bar_width = max(10, int(bar_width))
+        self.stream = stream or sys.stdout
+        self._last_len = 0
+        self._term_cols_fallback = 80
+
+    def update(self, episode_id):
+        if self.total_episodes <= 0:
+            return
+        episode_id = max(0, int(episode_id))
+        completed = min(episode_id, self.total_episodes)
+        frac = completed / self.total_episodes if self.total_episodes else 1.0
+
+        elapsed = time.time() - self.start_time
+        rate = completed / elapsed if elapsed > 0 else 0.0
+        remaining = self.total_episodes - completed
+        eta = remaining / rate if rate > 0 else None
+
+        # Keep the line short enough to avoid terminal wrapping, which can look
+        # like the progress bar "prints on new lines" even when using `\r`.
+        cols = self._term_cols_fallback
+        try:
+            cols = shutil.get_terminal_size(fallback=(self._term_cols_fallback, 20)).columns
+        except OSError:
+            cols = self._term_cols_fallback
+        max_cols = max(20, int(cols) - 1)  # stay under the last column to avoid wrap
+
+        elapsed_s = _format_seconds(elapsed)
+        eta_s = _format_seconds(eta)
+        pct_s = f"{frac * 100:5.1f}%"
+
+        # Prefer showing both elapsed+ETA, then only ETA, then only percent.
+        suffix_candidates = [
+            f"] {pct_s} elapsed {elapsed_s} ETA {eta_s}",
+            f"] {pct_s} ETA {eta_s}",
+            f"] {pct_s}",
+        ]
+
+        prefix = f"Ep {completed}/{self.total_episodes} ["
+        chosen_suffix = suffix_candidates[-1]
+        bar_width = self.bar_width
+        for suffix in suffix_candidates:
+            allowed = max_cols - len(prefix) - len(suffix)
+            if allowed >= 5:
+                chosen_suffix = suffix
+                bar_width = min(self.bar_width, allowed)
+                break
+            if len(prefix) + len(suffix) <= max_cols:
+                # Fits without a bar.
+                chosen_suffix = suffix
+                bar_width = 0
+                break
+
+        if bar_width > 0:
+            filled = int(bar_width * frac)
+            bar = "#" * filled + "-" * (bar_width - filled)
+            line = prefix + bar + chosen_suffix
+        else:
+            # No room for a meaningful bar; just print stats.
+            show_elapsed = "elapsed " in chosen_suffix
+            show_eta = "ETA " in chosen_suffix
+            line = f"Ep {completed}/{self.total_episodes} {pct_s}"
+            if show_elapsed:
+                line += f" elapsed {elapsed_s}"
+            if show_eta:
+                line += f" ETA {eta_s}"
+
+        if len(line) > max_cols:
+            line = line[:max_cols]
+
+        # Update the same line in-place.
+        pad = " " * max(0, self._last_len - len(line))
+        self.stream.write("\r" + line + pad)
+        self.stream.flush()
+        self._last_len = len(line)
+
+    def close(self):
+        self.stream.write("\n")
+        self.stream.flush()
 
 
 #####################################################
@@ -149,6 +247,7 @@ def train_buy_phase(
     global_step = 0
     start_episode = 0
     start_time = time.time()
+    progress = EpisodeProgress(episodes, start_time) if progress_bar else None
 
     if resume_from:
         payload = load_checkpoint(
@@ -307,5 +406,8 @@ def train_buy_phase(
             ckpt_path = writer.save_checkpoint(payload, f"checkpoint_ep_{episode_id:06d}")
             writer.log_weights_checkpoint(episode_id, ckpt_path)
 
-    if progress_bar:
-        pass
+        if progress:
+            progress.update(episode_id)
+
+    if progress:
+        progress.close()

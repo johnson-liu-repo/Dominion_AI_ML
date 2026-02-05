@@ -142,7 +142,7 @@ class Player:
             else:
                 # Deck is empty -> shuffle discard pile into deck
                 if len(self.deck) == 0:
-                    logger.info(f"{self} shuffles their deck")
+                    # logger.info(f"{self} shuffles their deck")
                     self.discard_pile.move_to(self.deck)
                     self.deck.shuffle()
                     self.shuffles += 1
@@ -151,8 +151,8 @@ class Player:
                 destination.add(draw_card)
                 drawn_cards.add(draw_card)
 
-        if not silent:
-            logger.info(f"{self} draws {drawn_cards}")
+        # if not silent:
+        #     logger.info(f"{self} draws {drawn_cards}")
 
     def discard(
             self,
@@ -170,8 +170,8 @@ class Player:
         for card in source.cards:
             if card == target_card:
                 self.discard_pile.add(source.remove(card))
-                if not silent:
-                    logger.info(f"{self} discards {card}")
+                # if not silent:
+                #     logger.info(f"{self} discards {card}")
                 game.effect_registry.on_discard(self, card, game, source)
                 return
 
@@ -254,7 +254,7 @@ class Player:
         self.state.potions -= cost.potions
         self.state.buys -= 1
 
-        logger.info(f"{self} buys {card}")
+        # logger.info(f"{self} buys {card}")
 
         if self.possessing_player is None:
             try:
@@ -288,7 +288,7 @@ class Player:
             gain_card = source.remove(card)
             destination.add(gain_card)
             self.current_turn_gains.append((game.current_phase, card))
-            logger.info(f"{self} gains {gain_card}")
+            # logger.info(f"{self} gains {gain_card}")
             game.effect_registry.on_gain(self, card, game, destination)
         else:
             self.possessing_player.gain(card, game, destination=self.possessing_player.discard_pile, source=source)
@@ -330,7 +330,7 @@ class Player:
                     game.trash.add(card)
                 else:
                     self.possession_trash.add(card)
-                logger.info(f"{self} trashes {card}")
+                # logger.info(f"{self} trashes {card}")
                 game.effect_registry.on_trash(self, card, game)
 
                 break
@@ -345,7 +345,7 @@ class Player:
         if message is None:
             message = f"{self} reveals "
 
-        logger.info(message + ", ".join(card.name for card in cards))
+        # logger.info(message + ", ".join(card.name for card in cards))
         for card in cards:
             game.effect_registry.on_reveal(self, card, game)
 
@@ -357,7 +357,7 @@ class Player:
         if isinstance(cards, Card):
             cards = [cards]
 
-        logger.info(f"{self} topdecks " + ", ".join(card.name for card in cards))
+        # logger.info(f"{self} topdecks " + ", ".join(card.name for card in cards))
         for card in cards:
             source.remove(card)
             self.deck.add(card)
@@ -374,14 +374,15 @@ class Player:
         self.state.buys = 1
 
         if is_extra_turn:
-            if self.possessing_player is None:
-                logger.info(f"\nTurn {self.turns} (extra) - {self.player_id}")
-            else:
-                logger.info(f"\nTurn {self.turns} (possession) - {self.player_id} possessed by {self.possessing_player}")
+            # if self.possessing_player is None:
+            #     logger.info(f"\nTurn {self.turns} (extra) - {self.player_id}")
+            # else:
+            #     logger.info(f"\nTurn {self.turns} (possession) - {self.player_id} possessed by {self.possessing_player}")
+            pass
         else:
             # extra turns do not count toward the total number of turns
             self.turns += 1
-            logger.info(f"\nTurn {self.turns} - {self.player_id}")
+            # logger.info(f"\nTurn {self.turns} - {self.player_id}")
 
         for mat_name in self.mats:
             mat = self.mats[mat_name]
@@ -397,7 +398,7 @@ class Player:
         game.current_phase = game.Phase.Action
 
         while self.state.actions > 0:
-            logger.info(f"{self.player_id}'s hand: {self.hand}")
+            # logger.info(f"{self.player_id}'s hand: {self.hand}")
 
             viable_actions = [card for card in self.hand.cards if CardType.Action in card.type]
             if not viable_actions:
@@ -414,7 +415,7 @@ class Player:
 
         viable_treasures = [card for card in self.hand.cards if CardType.Treasure in card.type]
         while len(viable_treasures) > 0:
-            logger.info(f"Hand: {self.hand}")
+            # logger.info(f"Hand: {self.hand}")
 
             cards = self.decider.treasure_phase_decision(viable_treasures, self, game)
             if len(cards) == 0:
@@ -423,17 +424,17 @@ class Player:
             for card in cards:
                 self.exact_play(card, game)
             cards_str = ", ".join([str(c) for c in cards])
-            logger.info(f"{self.player_id} played {cards_str}")
+            # logger.info(f"{self.player_id} played {cards_str}")
 
             viable_treasures = [card for card in self.hand.cards if CardType.Treasure in card.type]
 
     def start_buy_phase(self, game: "Game") -> None:
         while self.state.buys > 0:
-            logger.info(game.supply.get_pretty_string(self, game))
-            logger.info(f"Money: {self.state.money}")
-            if self.state.potions > 0:
-                logger.info(f"Potions: {self.state.potions}")
-            logger.info(f"Buys: {self.state.buys}")
+            # logger.info(game.supply.get_pretty_string(self, game))
+            # logger.info(f"Money: {self.state.money}")
+            # if self.state.potions > 0:
+            #     logger.info(f"Potions: {self.state.potions}")
+            # logger.info(f"Buys: {self.state.buys}")
 
             valid_cards = [
                 c
@@ -448,7 +449,7 @@ class Player:
             )
 
             if card is None:
-                logger.info(f"{self} buys nothing")
+                # logger.info(f"{self} buys nothing")
                 break
 
             self.buy(card, game)

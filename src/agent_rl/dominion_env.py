@@ -7,9 +7,9 @@ from gymnasium import spaces
 
 from pyminion_master.pyminion.core import CardType
 
-from agent_rl.logging_utils import get_train_logger
+# from agent_rl.logging_utils import get_train_logger
 
-logger = get_train_logger()
+# logger = get_train_logger()
 
 
 class DominionBuyPhaseEnv(gym.Env):
@@ -37,6 +37,8 @@ class DominionBuyPhaseEnv(gym.Env):
         # internal flags
         self._done  = False
         self._turn  = 0
+        self.turn_events = []
+        self._agent_hand_snapshot = None
 
     # --------------------------------------------------------------------- #
     #  Public API                                                           #
@@ -46,6 +48,8 @@ class DominionBuyPhaseEnv(gym.Env):
         super().reset(seed=seed)
         self.game.start()                   # full game restart
         self._turn, self._done = 0, False
+        self.turn_events = []
+        self._agent_hand_snapshot = None
         self._start_new_turn()              # plays start-action & treasure phase
         return self._obs(), {}
 
@@ -87,7 +91,8 @@ class DominionBuyPhaseEnv(gym.Env):
         self._turn += 1
         self.game.current_player = self.bot
         self.bot.start_turn(self.game, is_extra_turn=False)
-        logger.info(f"Hand ({self.bot.player_id}): {self.bot.hand}")
+        self._agent_hand_snapshot = [card.name for card in self.bot.hand.cards]
+        # logger.info(f"Hand ({self.bot.player_id}): {self.bot.hand}")
         self.bot.start_treasure_phase(self.game)
         self.bot.start_action_phase(self.game)
 
@@ -96,20 +101,23 @@ class DominionBuyPhaseEnv(gym.Env):
     def _play_opponents(self):
         """Play full turns for all opponents before the next agent turn."""
         for opponent in self.game.get_opponents(self.bot):
-            logger.info(f"Hand ({opponent.player_id}): {opponent.hand}")
+            hand_snapshot = [card.name for card in opponent.hand.cards]
+            # logger.info(f"Hand ({opponent.player_id}): {opponent.hand}")
             self.game.current_player = opponent
             self.game.play_turn(opponent)
             buys = [
                 card for phase, card in opponent.last_turn_gains
                 if phase == self.game.Phase.Buy
             ]
-            if buys:
-                for card in buys:
-                    logger.info(
-                        f"Buy phase: {opponent.player_id} bought {card} (turn {self._turn})"
-                    )
-            else:
-                logger.info(f"Buy phase: {opponent.player_id} passed (turn {self._turn})")
+            # if buys:
+                # for card in buys:
+                    # logger.info(
+                        # f"Buy phase: {opponent.player_id} bought {card} (turn {self._turn})"
+                    # )
+            # else:
+                # logger.info(f"Buy phase: {opponent.player_id} passed (turn {self._turn})")
+            buy_names = [card.name for card in buys] if buys else ["PASS"]
+            self._record_turn_event(opponent, hand_snapshot, buy_names, self._turn)
             if self.game.is_over():
                 return
 
@@ -143,20 +151,24 @@ class DominionBuyPhaseEnv(gym.Env):
         #  mask invalid indices
         mask = self.valid_action_mask()
         if mask[action_idx] == 0:
-            logger.debug(f"Buy phase: {self.bot.player_id} tried illegal action {action_idx} (turn {self._turn})")
+            # logger.debug(f"Buy phase: {self.bot.player_id} tried illegal action {action_idx} (turn {self._turn})")
+            self._record_turn_event(self.bot, self._agent_hand_snapshot, ["ILLEGAL"], self._turn)
             return -0.1, False
 
         if action_idx == self.pass_idx:         # no purchase
-            logger.info(f"Buy phase: {self.bot.player_id} passed (turn {self._turn})")
+            # logger.info(f"Buy phase: {self.bot.player_id} passed (turn {self._turn})")
+            self._record_turn_event(self.bot, self._agent_hand_snapshot, ["PASS"], self._turn)
             return -0.01, True
 
         name = self.card_names[action_idx]
         pile = self.game.supply.get_pile(name)
         try:
             self.bot.buy(pile.cards[0], self.game)
-            logger.info(f"Buy phase: {self.bot.player_id} bought {name} (turn {self._turn})")
+            # logger.info(f"Buy phase: {self.bot.player_id} bought {name} (turn {self._turn})")
+            self._record_turn_event(self.bot, self._agent_hand_snapshot, [name], self._turn)
             return +0.01, True
         except Exception:                       # money / buys / empty pile
+            self._record_turn_event(self.bot, self._agent_hand_snapshot, ["ILLEGAL"], self._turn)
             return -0.01, False
 
     # ---------- observation + mask --------------------------------------- #
@@ -227,3 +239,16 @@ class DominionBuyPhaseEnv(gym.Env):
             if pn == ln or ln in pn.split('/'):
                 return pile
         return None
+
+    def _record_turn_event(self, player, hand_snapshot, buys, turn):
+        self.turn_events.append({
+            "turn": int(turn),
+            "player_id": player.player_id,
+            "hand": list(hand_snapshot) if hand_snapshot else [],
+            "buys": list(buys) if buys else [],
+        })
+
+    def consume_turn_events(self):
+        events = self.turn_events
+        self.turn_events = []
+        return events

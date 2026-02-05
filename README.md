@@ -1,5 +1,7 @@
 # Dominion AI — Reinforcement Learning for Dominion
 
+——— Work in progress ———
+
 This project explores reinforcement learning approaches to training bots that can play the deck-building board game *Dominion*. It builds on the [Pyminion](https://github.com/evanofslack/pyminion) library, providing an environment wrapper and experimental reinforcement learning agents.
 
 Johnson Liu\
@@ -12,7 +14,6 @@ Email: [liujohnson.jl@gmail.com](mailto:liujohnson.jl@gmail.com)
 
 ---
 
-## Newcomer Report
 
 ### General Structure
 
@@ -62,7 +63,7 @@ If you want to go deeper or expand the project, here are useful next steps:
 
 ### Goal
 
-Create an AI framework to train reinforcement learning agents to play Dominion.
+Create an framework to train reinforcement learning agents to play Dominion.
 
 ### Current Progress
 

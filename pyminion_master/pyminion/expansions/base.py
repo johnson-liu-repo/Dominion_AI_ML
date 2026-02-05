@@ -684,7 +684,7 @@ class Moat(Action):
             )
             if block:
                 defending_player.reveal(moat, game)
-                logger.info(f"{defending_player} blocks {attack_card} with Moat")
+                # logger.info(f"{defending_player} blocks {attack_card} with Moat")
 
             return not block
 
@@ -1144,7 +1144,7 @@ class Sentry(Action):
         trash_cards: list[Card] = []
         if len(looked_at) > 0:
             s = plural("card", len(looked_at))
-            logger.info(f"Sentry {s}: {looked_at}")
+            # logger.info(f"Sentry {s}: {looked_at}")
             trash_cards = player.decider.trash_decision(
                 prompt="Enter the cards you would like to trash: ",
                 card=self,
@@ -1161,7 +1161,7 @@ class Sentry(Action):
         discard_cards: list[Card] = []
         if len(looked_at) > 0:
             s = plural("card", len(looked_at))
-            logger.info(f"Sentry {s}: {looked_at}")
+            # logger.info(f"Sentry {s}: {looked_at}")
             discard_cards = player.decider.discard_decision(
                 prompt="Enter the cards you would like to discard: ",
                 card=self,
@@ -1174,9 +1174,9 @@ class Sentry(Action):
 
         reorder = False
         if len(looked_at) == 2:
-            logger.info(
-                f"Current order: {looked_at.cards[0]} (Top), {looked_at.cards[1]} (Bottom)"
-            )
+            # logger.info(
+            #     f"Current order: {looked_at.cards[0]} (Top), {looked_at.cards[1]} (Bottom)"
+            # )
             reorder = player.decider.binary_decision(
                 prompt="Would you like to switch the order of the cards? y/n: ",
                 card=self,

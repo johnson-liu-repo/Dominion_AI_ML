@@ -683,9 +683,9 @@ class NativeVillage(Action):
                 logger.info(f"{player} adds a card to their Native Village mat")
         elif choice == NativeVillage.Choice.GetFromMat:
             mat.move_to(player.hand)
-            logger.info(
-                f"{player} puts {mat_len} {cards_str} from their Native Village mat into their hand"
-            )
+            # logger.info(
+            #     f"{player} puts {mat_len} {cards_str} from their Native Village mat into their hand"
+            # )
         else:
             raise ValueError(f"Unknown native village choice '{choice}'")
 

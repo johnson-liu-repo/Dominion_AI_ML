@@ -1,13 +1,17 @@
 """Minimal DQN training loop for the Dominion buy-phase environment."""
 
+import time
+from pathlib import Path
+from collections import deque
+import random
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import numpy as np
-import random
-from collections import deque
 
-from agent_rl.logging_utils import configure_training_logging
+# from agent_rl.logging_utils import configure_training_logging
+from agent_rl.training_io import TrainingRunWriter, load_checkpoint, resolve_run_dir
 
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -113,9 +117,19 @@ def train_buy_phase(
     eps_decay    = config.get('eps_decay', 0.9995)
     eps_min      = config.get('eps_min', 0.05)
     target_update= config.get('target_update', 1_000)
+    output_dir   = config.get('output_dir')
+    run_dir      = config.get('run_dir')
+    resume_from  = config.get('resume_from')
+    checkpoint_every = config.get('checkpoint_every', 100)
+    latest_every = config.get('latest_every', 10)
+    save_turns   = config.get('save_turns', True)
 
 
-    logger = configure_training_logging()
+    # logger = configure_training_logging()
+    repo_root = Path(__file__).resolve().parents[2]
+    output_dir = Path(output_dir) if output_dir else (repo_root / "data" / "training")
+    run_dir = resolve_run_dir(output_dir, run_dir=run_dir, resume_from=resume_from)
+    writer = TrainingRunWriter(run_dir)
     input_dim  = env.observation_space.shape[0]
     n_actions  = env.action_space.n                   #  |card_names| + 1 (pass)
 
@@ -129,9 +143,22 @@ def train_buy_phase(
     replay   = deque(maxlen=buffer_size)
 
     global_step = 0
+    start_episode = 0
 
-    for ep in range(episodes):
-        logger.info(f"\n=== Starting episode {ep:04d} ===")
+    if resume_from:
+        payload = load_checkpoint(
+            resume_from,
+            policy_net=policy_net,
+            target_net=target_net,
+            optimizer=opt,
+            device=DEVICE,
+        )
+        epsilon = payload.get("epsilon", epsilon)
+        global_step = payload.get("global_step", global_step)
+        start_episode = payload.get("episode", start_episode) + 1
+
+    for ep in range(start_episode, episodes):
+        # logger.info(f"\n=== Starting episode {ep:04d} ===")
         obs, _    = env.reset()
 
         # logger.info("card_names -> supply piles mapping:")
@@ -216,18 +243,57 @@ def train_buy_phase(
         opponents = [bot for bot in env.opponent_bots if bot != env.bot]
         opponent_scores = [opp.get_victory_points() for opp in opponents]
 
-        logger.info("\n\n--- Episode Summary ---")
+        # logger.info("\n\n--- Episode Summary ---")
 
-        logger.info(f"RL agent score: {RL_agent_score}")
-        logger.info("Opponent scores:")
-        for i, opp_score in enumerate(opponent_scores):
-            logger.info(f"  {opponents[i].player_id}: {opp_score}")
+        # logger.info(f"RL agent score: {RL_agent_score}")
+        # logger.info("Opponent scores:")
+        # for i, opp_score in enumerate(opponent_scores):
+            # logger.info(f"  {opponents[i].player_id}: {opp_score}")
 
         score_diff = np.average([RL_agent_score - opp_score for opp_score in opponent_scores]) if opponent_scores else None
         ep_reward += score_diff if score_diff is not None else 0.0
 
-        if score_diff is not None:
-            logger.info(f"Ep {ep:04d} | steps={step_ctr:3d} | epsilon={epsilon:.3f} | reward={ep_reward:.3f} | score_diff={score_diff:.1f}")
-        else:
-            logger.info(f"Ep {ep:04d} | steps={step_ctr:3d} | epsilon={epsilon:.3f} | reward={ep_reward:.3f}")
+        # if score_diff is not None:
+            # logger.info(f"Ep {ep:04d} | steps={step_ctr:3d} | epsilon={epsilon:.3f} | reward={ep_reward:.3f} | score_diff={score_diff:.1f}")
+        # else:
+            # logger.info(f"Ep {ep:04d} | steps={step_ctr:3d} | epsilon={epsilon:.3f} | reward={ep_reward:.3f}")
+
+        episode_id = ep + 1
+        writer.log_episode({
+            "episode": episode_id,
+            "steps": step_ctr,
+            "reward": float(ep_reward),
+            "score_diff": float(score_diff) if score_diff is not None else "",
+            "epsilon": float(epsilon),
+            "timestamp": time.time(),
+        })
+
+        turn_events = env.consume_turn_events()
+        if save_turns:
+            for event in turn_events:
+                event["episode"] = episode_id
+            writer.write_turns(episode_id, turn_events)
+
+        should_save_latest = latest_every and (episode_id % latest_every == 0)
+        should_save_checkpoint = checkpoint_every and (episode_id % checkpoint_every == 0)
+        if ep == episodes - 1:
+            should_save_latest = True
+            should_save_checkpoint = True
+
+        if should_save_latest or should_save_checkpoint:
+            payload = {
+                "episode": ep,
+                "global_step": global_step,
+                "epsilon": epsilon,
+                "policy_state": policy_net.state_dict(),
+                "target_state": target_net.state_dict(),
+                "opt_state": opt.state_dict(),
+            }
+
+        if should_save_latest:
+            writer.save_checkpoint(payload, "checkpoint_latest")
+
+        if should_save_checkpoint:
+            ckpt_path = writer.save_checkpoint(payload, f"checkpoint_ep_{episode_id:06d}")
+            writer.log_weights_checkpoint(episode_id, ckpt_path)
 

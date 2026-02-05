@@ -32,7 +32,7 @@ class Simulator:
         self.results: list[GameResult] = []
 
     def run(self) -> SimulatorResult:
-        logger.info(f"Simulating {self.iterations} games...")
+        # logger.info(f"Simulating {self.iterations} games...")
         for _ in range(self.iterations):
             game = copy.copy((self.game))
             result = game.play()

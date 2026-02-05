@@ -134,10 +134,10 @@ class GetSetAsideCardEffect(PlayerGameEffect):
             player.set_aside.remove(card)
             player.hand.add(card)
 
-        if len(self.cards) == 1:
-            logger.info(f"{player} puts card in hand: {self.cards[0]}")
-        else:
-            logger.info(f"{player} puts cards in hand: {self.cards}")
+        # if len(self.cards) == 1:
+        #     logger.info(f"{player} puts card in hand: {self.cards[0]}")
+        # else:
+        #     logger.info(f"{player} puts cards in hand: {self.cards}")
 
         game.effect_registry.unregister_turn_start_effect(self.get_id())
 

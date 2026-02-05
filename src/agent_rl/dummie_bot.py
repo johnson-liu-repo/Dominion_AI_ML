@@ -1,6 +1,6 @@
 """Baseline Dominion bot used for debugging and simple opponents."""
 
-import logging
+# import logging
 from typing import Iterator
 import sys
 
@@ -14,7 +14,7 @@ from pyminion_master.pyminion.expansions.base import province, duchy, estate
 from pyminion_master.pyminion.player import Player
 from pyminion_master.pyminion.game import Game
 
-logger = logging.getLogger()
+# logger = logging.getLogger()
 
 class DummieBotDecider(BotDecider):
     """

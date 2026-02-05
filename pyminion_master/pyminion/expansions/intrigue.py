@@ -505,7 +505,7 @@ class Masquerade(Action):
             next_idx = (idx + 1) % len(valid_players)
             next_player = valid_players[next_idx]
             next_player.hand.add(c)
-            logger.info(f"{p} passes {c} to {next_player}")
+            # logger.info(f"{p} passes {c} to {next_player}")
 
         if len(player.hand) == 0:
             return
@@ -887,7 +887,7 @@ class Replace(Action):
 
         if CardType.Action in gain_card.type or CardType.Treasure in gain_card.type:
             player.gain(gain_card, game, destination=player.deck)
-            logger.info(f"{player} topdecks {gain_card}")
+            # logger.info(f"{player} topdecks {gain_card}")
         else:
             player.gain(gain_card, game)
 
@@ -1280,7 +1280,7 @@ class WishingWell(Action):
         assert len(named_cards) == 1
         name = named_cards[0].name
 
-        logger.info(f"{player} names {name}")
+        # logger.info(f"{player} names {name}")
 
         revealed = AbstractDeck()
         player.draw(1, revealed, silent=True)

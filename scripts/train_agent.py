@@ -13,7 +13,7 @@ from pyminion_master.pyminion.bots.examples import BigMoney, BigMoneyUltimate
 
 from agent_rl.train_dqn import train_buy_phase
 from agent_rl.card_catalog import BASE_CARDS
-from agent_rl.logging_utils import configure_training_logging
+# from agent_rl.logging_utils import configure_training_logging
 from src.agent_rl.dominion_env_factory import make_env
 
 
@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # logger.info("---- Training Buy Phase with DQN ----")
     # logger.info("-------------------------------------")
 
-    configure_training_logging()
+    # configure_training_logging()
 
     bm = BigMoney()
     # bm_ultimate = BigMoneyUltimate()
@@ -33,16 +33,22 @@ if __name__ == "__main__":
             opponent_bots = [ bm ]
         )()
 
+    # Optional: set this to a checkpoint file or run directory to resume training.
+    # Example:
+    # resume_from = repo_root / "data" / "training" / "training_003" / "checkpoints" / "checkpoint_latest.pt"
+    resume_from = None
+
     training_configuration = {
         'env': phase_env,
-        'episodes': 200000,      # total number of episodes to train
-        'turn_limit': 250,       # max turns per episode
+        'episodes': 2,      # total number of episodes to train
+        'turn_limit': 10,       # max turns per episode
         'batch_size': 64,        # batch size for optimization
         'gamma': 0.99,           # discount factor
         'epsilon': 1.0,          # starting epsilon for epsilon-greedy
         'eps_decay': 0.9995,     # epsilon decay rate per step
         'eps_min': 0.05,         # minimum epsilon
-        'target_update': 1000    # sync target network every N steps
+        'target_update': 1000,   # sync target network every N steps
+        'resume_from': resume_from,
     }
 
     train_buy_phase(training_configuration)

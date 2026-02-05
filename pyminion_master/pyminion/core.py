@@ -226,7 +226,7 @@ class Action(Card):
         Specific play method unique to each action card
 
         """
-        logger.info(f"{player} plays {self}")
+        # logger.info(f"{player} plays {self}")
 
         if generic_play:
             self.generic_play(player)

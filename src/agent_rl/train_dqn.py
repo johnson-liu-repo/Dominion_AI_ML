@@ -209,18 +209,18 @@ def train_buy_phase(
     ):
 
     env          = config['env']
-    episodes     = config.get('episodes', 200_000)
+    episodes     = config.get('episodes', 200000)
     turn_limit   = config.get('turn_limit', 250)
     batch_size   = config.get('batch_size', 64)
     gamma        = config.get('gamma', 0.99)
     epsilon      = config.get('epsilon', 1.0)
     eps_decay    = config.get('eps_decay', 0.9995)
     eps_min      = config.get('eps_min', 0.05)
-    target_update= config.get('target_update', 1_000)
+    target_update= config.get('target_update', 1000)
     output_dir   = config.get('output_dir')
     run_dir      = config.get('run_dir')
     resume_from  = config.get('resume_from')
-    checkpoint_every = config.get('checkpoint_every', 100)
+    checkpoint_every = config.get('checkpoint_every', 10)
     latest_every = config.get('latest_every', 10)
     save_turns   = config.get('save_turns', True)
     save_turns_every = config.get('save_turns_every', 1)

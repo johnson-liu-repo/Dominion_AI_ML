@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     training_configuration = {
         'env': phase_env,
-        'episodes': 100,      # total number of episodes to train
+        'episodes': 10000,      # total number of episodes to train
         'turn_limit': 250,       # max turns per episode
         'batch_size': 64,        # batch size for optimization
         'gamma': 0.99,           # discount factor
@@ -49,7 +49,7 @@ if __name__ == "__main__":
         'eps_min': 0.05,         # minimum epsilon
         'target_update': 1000,   # sync target network every N steps
         'save_turns': True,      # write per-turn JSONL files
-        'save_turns_every': 10,  # write turns every N episodes
+        'save_turns_every': 1000,  # write turns every N episodes
         'resume_from': resume_from,
     }
 

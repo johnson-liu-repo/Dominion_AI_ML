@@ -258,6 +258,7 @@ def train_buy_phase(
             device=DEVICE,
         )
         epsilon = payload.get("epsilon", epsilon)
+        eps_decay = payload.get("eps_decay", eps_decay)
         global_step = payload.get("global_step", global_step)
         start_episode = payload.get("episode", start_episode) + 1
 
@@ -394,6 +395,7 @@ def train_buy_phase(
                 "episode": ep,
                 "global_step": global_step,
                 "epsilon": epsilon,
+                "eps_decay": eps_decay,
                 "policy_state": policy_net.state_dict(),
                 "target_state": target_net.state_dict(),
                 "opt_state": opt.state_dict(),

@@ -9,6 +9,7 @@ Examples:
   python scripts/plot_final_deck_card_trends.py data/training/training_006/final_decks.json
   python scripts/plot_final_deck_card_trends.py data/training/training_006 --out plots/final_decks_ma10.png
   python scripts/plot_final_deck_card_trends.py 6 --window 25 --show
+  python scripts/plot_final_deck_card_trends.py 7 --episode-start 500 --episode-end 2000
 """
 
 from __future__ import annotations
@@ -154,6 +155,28 @@ def _extract_episode_player_cards(
     return episodes, episode_map, cards_seen, players_seen
 
 
+def _filter_episodes(
+    episodes: list[int],
+    episode_map: dict[int, dict[str, dict[str, int]]],
+    *,
+    episode_start: int | None,
+    episode_end: int | None,
+) -> tuple[list[int], dict[int, dict[str, dict[str, int]]]]:
+    if episode_start is None and episode_end is None:
+        return episodes, episode_map
+
+    if episode_start is not None and episode_end is not None and episode_start > episode_end:
+        raise ValueError(f"--episode-start ({episode_start}) must be <= --episode-end ({episode_end})")
+
+    filtered = [
+        ep
+        for ep in episodes
+        if (episode_start is None or ep >= episode_start) and (episode_end is None or ep <= episode_end)
+    ]
+    filtered_map = {ep: episode_map[ep] for ep in filtered}
+    return filtered, filtered_map
+
+
 def _counts_dataframe(
     episodes: list[int],
     episode_map: dict[int, dict[str, dict[str, int]]],
@@ -227,6 +250,18 @@ def main() -> int:
         help="Player ids to plot (default: RL_Agent big_money).",
     )
     parser.add_argument(
+        "--episode-start",
+        type=int,
+        default=None,
+        help="Optional: first episode (inclusive) to include in the plot.",
+    )
+    parser.add_argument(
+        "--episode-end",
+        type=int,
+        default=None,
+        help="Optional: last episode (inclusive) to include in the plot.",
+    )
+    parser.add_argument(
         "--max-cards",
         type=int,
         default=None,
@@ -237,6 +272,12 @@ def main() -> int:
         type=int,
         default=4,
         help="Number of subplot columns (default: 4).",
+    )
+    parser.add_argument(
+        "--legend",
+        choices=["figure", "axes", "none"],
+        default="figure",
+        help="Legend placement: figure (right side), axes (in every subplot), or none (default: figure).",
     )
     parser.add_argument("--out", default=None, help="Optional output image path.")
     parser.add_argument(
@@ -261,6 +302,18 @@ def main() -> int:
 
     if not episodes:
         raise ValueError(f"No episodes found in: {final_decks_path}")
+
+    episodes, episode_map = _filter_episodes(
+        episodes,
+        episode_map,
+        episode_start=args.episode_start,
+        episode_end=args.episode_end,
+    )
+    if not episodes:
+        raise ValueError(
+            "No episodes found after filtering by range. "
+            f"Requested: episode_start={args.episode_start}, episode_end={args.episode_end}."
+        )
 
     missing_players = [p for p in requested_players if p not in players_seen]
     if missing_players:
@@ -288,11 +341,15 @@ def main() -> int:
     cols = min(cols, len(cards))
     rows = int(math.ceil(len(cards) / cols))
 
+    legend_mode = str(args.legend)
+    include_figure_legend = legend_mode == "figure"
+    include_axes_legends = legend_mode == "axes"
+
     # Add a bit of width for an external legend.
     fig, axes = plt.subplots(
         nrows=rows,
         ncols=cols,
-        figsize=(cols * 4.0 + 2.5, rows * 2.8),
+        figsize=((cols * 4.0 + 2.5) if include_figure_legend else (cols * 4.0), rows * 2.8),
         sharex=True,
         sharey=False,
     )
@@ -317,27 +374,37 @@ def main() -> int:
             )
         ax.set_title(card, fontsize=10)
         ax.grid(True, alpha=0.3)
+        if include_axes_legends:
+            ax.legend(loc="upper right", fontsize=8, frameon=False)
 
     for ax in axes_list[len(cards):]:
         ax.axis("off")
 
     run_name = final_decks_path.parent.name
-    title = args.title or f"Final Deck Card Moving Averages (ma{args.window}) - {run_name}"
+    if args.episode_start is not None or args.episode_end is not None:
+        start = args.episode_start if args.episode_start is not None else episodes[0]
+        end = args.episode_end if args.episode_end is not None else episodes[-1]
+        range_suffix = f" (episodes {start}-{end})"
+    else:
+        range_suffix = ""
+    title = args.title or f"Final Deck Card Moving Averages (ma{args.window}) - {run_name}{range_suffix}"
     fig.suptitle(title)
     fig.supxlabel("Episode")
     fig.supylabel("Final deck card count (moving average)")
 
-    legend_handles = [
-        Line2D([0], [0], color=player_colors[p], linewidth=2.0, label=p) for p in players_to_plot
-    ]
-    fig.legend(
-        handles=legend_handles,
-        loc="center left",
-        bbox_to_anchor=(1.0, 0.5),
-        borderaxespad=0.0,
-    )
+    if include_figure_legend:
+        legend_handles = [
+            Line2D([0], [0], color=player_colors[p], linewidth=2.0, label=p) for p in players_to_plot
+        ]
+        fig.legend(
+            handles=legend_handles,
+            title="Player",
+            loc="center right",
+            bbox_to_anchor=(0.99, 0.5),
+            borderaxespad=0.0,
+        )
 
-    fig.tight_layout(rect=[0.0, 0.0, 0.86, 0.95])
+    fig.tight_layout(rect=([0.0, 0.0, 0.86, 0.95] if include_figure_legend else [0.0, 0.0, 1.0, 0.95]))
 
     if args.out:
         out_path = Path(args.out)
@@ -352,4 +419,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

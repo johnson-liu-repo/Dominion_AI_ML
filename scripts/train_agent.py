@@ -36,11 +36,11 @@ if __name__ == "__main__":
     # Optional: set this to a checkpoint file or run directory to resume training.
     # Example:
     # resume_from = repo_root / "data" / "training" / "training_003" / "checkpoints" / "checkpoint_latest.pt"
-    resume_from = None
+    resume_from = 'data/training/training_007/checkpoints/checkpoint_latest.pt'
 
     training_configuration = {
         'env': phase_env,
-        'episodes': 10000,      # total number of episodes to train
+        'episodes': 11000,      # total number of episodes to train
         'turn_limit': 250,       # max turns per episode
         'batch_size': 64,        # batch size for optimization
         'gamma': 0.99,           # discount factor
@@ -48,9 +48,12 @@ if __name__ == "__main__":
         'eps_decay': 0.9995,     # epsilon decay rate per step
         'eps_min': 0.05,         # minimum epsilon
         'target_update': 1000,   # sync target network every N steps
-        'save_turns': True,      # write per-turn JSONL files
-        'save_turns_every': 1000,  # write turns every N episodes
-        'resume_from': resume_from,
+        'resume_from': resume_from,  # checkpoint file or run directory to resume training from
+        'checkpoint_every': 200, # save model checkpoint every N episodes
+        'latest_every': 1,     # save "latest" checkpoint every N episodes (overwrites previous)
+        'save_turns': True ,     # whether to save per-turn data as JSONL files
+        'save_turns_every': 200,  # how often to save per-turn data (in episodes)
+        'progress_bar': True,     # whether to show a progress bar during training  
     }
 
     train_buy_phase(training_configuration)

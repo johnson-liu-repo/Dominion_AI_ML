@@ -19,6 +19,26 @@ EPISODE_CSV_HEADER = [
     "timestamp",
 ]
 
+def _tiered_episode_dir(root: Path, prefix: str, episode_idx: int) -> Path:
+    """
+    Return a tiered directory for artifacts keyed by episode number.
+
+    Layout:
+      root/
+        {prefix}{000000,100000,200000,...}/
+          {prefix}{010000,020000,...,090000}/
+
+    Episodes in the first 10k of a 100k block live directly under the 100k folder.
+    """
+    episode_idx = int(episode_idx)
+    bucket_100k = (episode_idx // 100_000) * 100_000
+    bucket_10k = (episode_idx // 10_000) * 10_000
+
+    top = root / f"{prefix}{bucket_100k:06d}"
+    if bucket_10k == bucket_100k:
+        return top
+    return top / f"{prefix}{bucket_10k:06d}"
+
 
 def _safe_int_suffix(name: str, prefix: str) -> Optional[int]:
     """Return the numeric suffix if `name` matches `prefix` + digits, else None."""
@@ -59,8 +79,9 @@ def resolve_run_dir(
     if resume_from is not None:
         resume_from = Path(resume_from)
         if resume_from.is_file():
-            if resume_from.parent.name == "checkpoints":
-                return resume_from.parent.parent
+            for parent in resume_from.parents:
+                if parent.name == "checkpoints":
+                    return parent.parent
             return resume_from.parent
         if resume_from.is_dir():
             return resume_from
@@ -121,7 +142,9 @@ class TrainingRunWriter:
 
     def write_turns(self, episode_idx: int, events: List[Dict[str, Any]]) -> Path:
         """Write a JSONL file containing per-turn events for an episode."""
-        path = self.episodes_dir / f"episode_{episode_idx:06d}_turns.jsonl"
+        turns_dir = _tiered_episode_dir(self.episodes_dir, "episode_ep_", episode_idx)
+        turns_dir.mkdir(parents=True, exist_ok=True)
+        path = turns_dir / f"episode_{episode_idx:06d}_turns.jsonl"
         with path.open("w", encoding="utf-8") as f:
             for event in events:
                 f.write(json.dumps(event, ensure_ascii=True) + "\n")
@@ -129,7 +152,13 @@ class TrainingRunWriter:
 
     def save_checkpoint(self, payload: Dict[str, Any], name: str) -> Path:
         """Save a torch checkpoint payload under the checkpoints directory."""
-        path = self.checkpoints_dir / f"{name}.pt"
+        episode_idx = _safe_int_suffix(name, "checkpoint_ep_")
+        if episode_idx is not None:
+            ckpt_dir = _tiered_episode_dir(self.checkpoints_dir, "checkpoint_ep_", episode_idx)
+            ckpt_dir.mkdir(parents=True, exist_ok=True)
+            path = ckpt_dir / f"{name}.pt"
+        else:
+            path = self.checkpoints_dir / f"{name}.pt"
         torch.save(payload, path)
         return path
 

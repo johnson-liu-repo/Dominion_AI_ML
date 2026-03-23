@@ -17,3 +17,6 @@ venv/
 # Logs
 scripts/logs/*
 data/*
+
+# Turns data for visualization in Claude's app
+claude/*

@@ -183,6 +183,9 @@ class DominionBuyPhaseEnv(gym.Env):
         
         return treasure_density
 
+    def _compute_vp_density(self):
+        return 0
+
     # ---------- observation + mask --------------------------------------- #
     def _obs(self):
         """Build observation vector of supply, hand, and scalar state."""

@@ -68,7 +68,7 @@ class DominionBuyPhaseEnv(gym.Env):
         if self.game.is_over():
             self._done = True
             info = self._terminal_info()
-            reward += info["score_diff"]
+            reward += info["score_diff"] + 0.5 if info["won"] else -0.5
             return self._obs(), reward, True, info
 
         # play opponents, if any ------------------------------------------ #
@@ -170,6 +170,18 @@ class DominionBuyPhaseEnv(gym.Env):
         except Exception:                       # money / buys / empty pile
             self._record_turn_event(self.bot, self._agent_hand_snapshot, ["ILLEGAL"], self._turn)
             return -0.01, False
+
+    # ---------- compute observables -------------------------------------- #
+    def _compute_treasure_density(self):
+        total_copper_cards = self._count_deck(self.bot.deck.cards)[self.card_names.index("Copper")]
+        total_silver_cards = self._count_deck(self.bot.deck.cards)[self.card_names.index("Silver")]
+        total_gold_cards = self._count_deck(self.bot.deck.cards)[self.card_names.index("Gold")]
+
+        total_treasure_cards = total_copper_cards + total_silver_cards + total_gold_cards
+
+        treasure_density = (total_silver_cards + 3*total_gold_cards)/total_treasure_cards if total_treasure_cards > 0 else 0.0
+        
+        return treasure_density
 
     # ---------- observation + mask --------------------------------------- #
     def _obs(self):

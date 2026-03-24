@@ -141,8 +141,8 @@ class DominionBuyPhaseEnv(gym.Env):
         """
         Execute the chosen buy.  Returns (reward, valid_flag).
         Reward scheme:
-          • +0.01  valid buy (or pass)
-          • -0.01  illegal selection (not enough $, empty pile, mask==0)
+          • 
+          • 
         """
         # logger.info(f"{self.bot.player_id} has {self.bot.state.money} money available...")
         # logger.info(f"{self.bot.player_id} has chosen action index {action_idx}...")
@@ -174,12 +174,35 @@ class DominionBuyPhaseEnv(gym.Env):
     # ---------- observation + mask --------------------------------------- #
     def _obs(self):
         """Build observation vector of supply, hand, and scalar state."""
+        # supply: count of cards remaining in each supply pile
         s = self._count_supply()
+
+        # hand: count of cards in bot's hand aligned to card_names
         h = self._count_deck(self.bot.hand.cards)
-        scalars = np.array([self.bot.state.actions,
-                            self.bot.state.buys,
-                            self.bot.state.money], dtype=np.float32)
-        return np.concatenate([s, h, scalars])
+
+        # deck: count of cards in bot's deck aligned to card_names
+        d = self._count_deck(self.bot.deck.cards)
+
+        # opponent deck: count of cards in opponent's deck aligned to card_names (for single opponent only, otherwise all zeros)
+        if self.opponent_bots and len(self.opponent_bots) == 1:
+            opponent = self.opponent_bots[0]
+            od = self._count_deck(opponent.deck.cards)
+
+
+        # scalars: actions, buys, money, turn number, current score diff (agent vs best opponent),
+        # count of cards in deck
+
+        scalars = np.array(
+                            [self.bot.state.actions,
+                                self.bot.state.buys,
+                                self.bot.state.money,
+                                self._turn,
+                                self._terminal_info()["score_diff"],
+                                self._deck_size()
+                            ], dtype=np.float32
+                        )
+
+        return np.concatenate([s, h, d, od, scalars])
 
     def valid_action_mask(self):
         """
@@ -206,6 +229,10 @@ class DominionBuyPhaseEnv(gym.Env):
         return mask
 
     # ---------- util counts ---------------------------------------------- #
+    def _deck_size(self):
+        """Count the total number of cards in the bot's deck."""
+        return len(self.bot.deck.cards)
+
     def _count_deck(self, cards):
         """Count card occurrences in a list of cards aligned to card_names."""
         cnt = np.zeros(len(self.card_names), dtype=np.float32)
@@ -231,7 +258,7 @@ class DominionBuyPhaseEnv(gym.Env):
         return cnt
 
     def _pile_for_card(self, name: str):
-        """Robustly find the supply pile corresponding to `name`."""
+        """Find the supply pile corresponding to `name`."""
         ln = name.lower()
         for pile in self.game.supply.piles:
             pn = pile.name.lower()

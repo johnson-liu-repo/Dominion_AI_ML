@@ -30,9 +30,12 @@ class DominionBuyPhaseEnv(gym.Env):
 
         n = len(card_names)
         self.action_space = spaces.Discrete(n + 1)                  # 0..n  (n==pass)
-        self.observation_space = spaces.Box(low=0, high=100,
-                                            shape=(2 * n + 3,),     # supply + hand + [actions, buys, money]
-                                            dtype=np.float32)
+        self.observation_space = spaces.Box(
+            low=-100,
+            high=100,
+            shape=(4 * n + 6,),  # supply + hand + own cards + opp cards + scalars
+            dtype=np.float32,
+        )
 
         # internal flags
         self._done  = False
@@ -93,8 +96,8 @@ class DominionBuyPhaseEnv(gym.Env):
         self.bot.start_turn(self.game, is_extra_turn=False)
         self._agent_hand_snapshot = [card.name for card in self.bot.hand.cards]
         # logger.info(f"Hand ({self.bot.player_id}): {self.bot.hand}")
-        self.bot.start_treasure_phase(self.game)
         self.bot.start_action_phase(self.game)
+        self.bot.start_treasure_phase(self.game)
 
         self.game.current_phase = self.game.Phase.Buy
 
@@ -161,30 +164,63 @@ class DominionBuyPhaseEnv(gym.Env):
             return -0.01, True
 
         name = self.card_names[action_idx]
-        pile = self.game.supply.get_pile(name)
+        pile = self._pile_for_card(name)
+
         try:
+            card = pile.cards[0]
+
             self.bot.buy(pile.cards[0], self.game)
             # logger.info(f"Buy phase: {self.bot.player_id} bought {name} (turn {self._turn})")
+            reward = 0.0
+
+            # Reward score-impacting buys and card-quality improvements.
+            if CardType.Victory in card.type or CardType.Curse in card.type:
+                # add the victory points of the bought card to the reward
+                reward += card.score()
+
+                if CardType.Victory in card.type:
+                    reward += self._victory_card_density()
+            
+            elif CardType.Treasure in card.type:
+                reward += self._treasure_density()
+
+
+            # penalty for diluting the deck
+            # penalty becomes larger as the deck grows, but is bounded by -1 for very large decks
+            reward += -(self._player_owned_card_count(self.bot)) / (self._player_owned_card_count(self.bot) + 1)
+
+            # log the buy event with the card name and hand snapshot
             self._record_turn_event(self.bot, self._agent_hand_snapshot, [name], self._turn)
-            return +0.01, True
+
+            return reward, True
+
         except Exception:                       # money / buys / empty pile
             self._record_turn_event(self.bot, self._agent_hand_snapshot, ["ILLEGAL"], self._turn)
-            return -0.01, False
+            return -1, False
 
     # ---------- compute observables -------------------------------------- #
-    def _compute_treasure_density(self):
-        total_copper_cards = self._count_deck(self.bot.deck.cards)[self.card_names.index("Copper")]
-        total_silver_cards = self._count_deck(self.bot.deck.cards)[self.card_names.index("Silver")]
-        total_gold_cards = self._count_deck(self.bot.deck.cards)[self.card_names.index("Gold")]
+    def _treasure_density(self):
+        total_copper_cards = self._count_named_player_owned_card(self.bot, "Copper")
+        total_silver_cards = self._count_named_player_owned_card(self.bot, "Silver")
+        total_gold_cards = self._count_named_player_owned_card(self.bot, "Gold")
 
         total_treasure_cards = total_copper_cards + total_silver_cards + total_gold_cards
 
         treasure_density = (total_silver_cards + 3*total_gold_cards)/total_treasure_cards if total_treasure_cards > 0 else 0.0
         
         return treasure_density
+    
+    def _victory_card_density(self):
+        total_estate_cards = self._count_named_player_owned_card(self.bot, "Estate")
+        total_duchy_cards = self._count_named_player_owned_card(self.bot, "Duchy")
+        total_province_cards = self._count_named_player_owned_card(self.bot, "Province")
 
-    def _compute_vp_density(self):
-        return 0
+        total_victory_cards = total_estate_cards + total_duchy_cards + total_province_cards
+
+        victory_card_density = (total_duchy_cards + 3*total_province_cards)/total_victory_cards if total_victory_cards > 0 else 0.0
+        
+        return victory_card_density
+
 
     # ---------- observation + mask --------------------------------------- #
     def _obs(self):
@@ -195,17 +231,18 @@ class DominionBuyPhaseEnv(gym.Env):
         # hand: count of cards in bot's hand aligned to card_names
         h = self._count_deck(self.bot.hand.cards)
 
-        # deck: count of cards in bot's deck aligned to card_names
-        d = self._count_deck(self.bot.deck.cards)
+        # zone cards: count of cards in deck + hand + discard aligned to card_names
+        d = self._count_player_zone_cards(self.bot)
 
-        # opponent deck: count of cards in opponent's deck aligned to card_names (for single opponent only, otherwise all zeros)
+        # opponent zone cards: count of cards in deck + hand + discard aligned to card_names
+        od = np.zeros(len(self.card_names), dtype=np.float32)
         if self.opponent_bots and len(self.opponent_bots) == 1:
             opponent = self.opponent_bots[0]
-            od = self._count_deck(opponent.deck.cards)
+            od = self._count_player_zone_cards(opponent)
 
 
         # scalars: actions, buys, money, turn number, current score diff (agent vs best opponent),
-        # count of cards in deck
+        # count of cards in deck + hand + discard
 
         scalars = np.array(
                             [self.bot.state.actions,
@@ -213,7 +250,7 @@ class DominionBuyPhaseEnv(gym.Env):
                                 self.bot.state.money,
                                 self._turn,
                                 self._terminal_info()["score_diff"],
-                                self._deck_size()
+                                self._player_zone_card_count(self.bot)
                             ], dtype=np.float32
                         )
 
@@ -244,9 +281,17 @@ class DominionBuyPhaseEnv(gym.Env):
         return mask
 
     # ---------- util counts ---------------------------------------------- #
-    def _deck_size(self):
-        """Count the total number of cards in the bot's deck."""
-        return len(self.bot.deck.cards)
+    def _player_zone_cards(self, player):
+        """Return cards in the player's deck, hand, and discard pile only."""
+        return list(player.deck.cards) + list(player.hand.cards) + list(player.discard_pile.cards)
+
+    def _player_zone_card_count(self, player):
+        """Count the total number of cards in the player's deck, hand, and discard pile."""
+        return len(player.deck.cards) + len(player.hand.cards) + len(player.discard_pile.cards)
+
+    def _player_owned_card_count(self, player):
+        """Count the total number of cards the player owns across all zones."""
+        return player.get_all_cards_count()
 
     def _count_deck(self, cards):
         """Count card occurrences in a list of cards aligned to card_names."""
@@ -262,6 +307,29 @@ class DominionBuyPhaseEnv(gym.Env):
             if idx is not None:
                 cnt[idx] += 1
         return cnt
+
+    def _count_player_zone_cards(self, player):
+        """Count card occurrences across deck, hand, and discard only."""
+        return self._count_deck(self._player_zone_cards(player))
+
+    def _count_player_owned_cards(self, player):
+        """Count card occurrences across all cards the player currently owns."""
+        return self._count_deck(player.get_all_cards())
+
+    def _count_named_card(self, counts, name):
+        """Safely read a named card count from a count vector."""
+        try:
+            return counts[self.card_names.index(name)]
+        except ValueError:
+            return 0.0
+
+    def _count_named_player_zone_card(self, player, name):
+        """Count a specific named card across deck, hand, and discard only."""
+        return self._count_named_card(self._count_player_zone_cards(player), name)
+
+    def _count_named_player_owned_card(self, player, name):
+        """Count a specific named card across all owned zones."""
+        return self._count_named_card(self._count_player_owned_cards(player), name)
 
     def _count_supply(self):
         """Count remaining cards in each supply pile."""

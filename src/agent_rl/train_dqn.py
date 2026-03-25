@@ -308,12 +308,15 @@ def train_buy_phase(
                 batch = random.sample(replay, batch_size)
                 # unpack and tensorise
                 obs_b, act_b, rew_b, nxt_b, done_b, nxt_mask_b = zip(*batch)
-                obs_b  = torch.as_tensor(obs_b,  dtype=torch.float32, device=DEVICE)
+                obs_b = np.array(obs_b, dtype=np.float32)
+                obs_b = torch.as_tensor(obs_b, device=DEVICE)
                 act_b  = torch.as_tensor(act_b,  dtype=torch.long,   device=DEVICE).unsqueeze(1)
                 rew_b  = torch.as_tensor(rew_b,  dtype=torch.float32,device=DEVICE)
-                nxt_b  = torch.as_tensor(nxt_b,  dtype=torch.float32,device=DEVICE)
+                nxt_b  = np.array(nxt_b, dtype=np.float32)
+                nxt_b  = torch.as_tensor(nxt_b,  device=DEVICE)
                 done_b = torch.as_tensor(done_b, dtype=torch.float32,device=DEVICE)
-                nxt_mask_b = torch.as_tensor(nxt_mask_b, dtype=torch.float32, device=DEVICE)
+                nxt_mask_b = np.array(nxt_mask_b, dtype=np.float32)
+                nxt_mask_b = torch.as_tensor(nxt_mask_b, device=DEVICE)
 
                 # Q(s,a)
                 q_sa   = policy_net(obs_b).gather(1, act_b).squeeze()

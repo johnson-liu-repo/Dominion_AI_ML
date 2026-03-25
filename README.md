@@ -279,18 +279,6 @@ If extending to multi-phase agents, options include:
 
 ---
 
-## Pointers for What to Learn Next
-
-If you want to deepen or expand the project:
-
-1. **Pyminion game flow** — Read `pyminion_master/pyminion/game.py` (class `Game`) to understand phases, turn flow, and card interactions.
-2. **Gymnasium API** — Learn how Gymnasium environments communicate observations, rewards, and termination (see `dominion_env.DominionBuyPhaseEnv`).
-3. **Action masking in DQN** — Explore alternatives in `train_dqn.py`: invalid-action penalties, policy-gradient methods, or masked softmax.
-4. **Multi-phase agents** — Extend `dominion_env.py` to expose the action phase; decide on shared vs. separate models.
-5. **Evaluation tooling** — Add metrics in `training_io.py` for win rate, deck diversity, and comparison to baseline bots.
-6. **Reproducibility** — Replace hardcoded `sys.path` hacks with repo-relative imports for portability across machines.
-
----
 
 ## Project Overview
 

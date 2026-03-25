@@ -36,11 +36,12 @@ if __name__ == "__main__":
     # Optional: set this to a checkpoint file or run directory to resume training.
     # Example:
     # resume_from = repo_root / "data" / "training" / "training_003" / "checkpoints" / "checkpoint_latest.pt"
-    resume_from = 'data/training/training_007/checkpoints/checkpoint_latest.pt'
+    # resume_from = 'data/training/training_007/checkpoints/checkpoint_latest.pt'
+    resume_from = None
 
     training_configuration = {
         'env': phase_env,
-        'episodes': 11000,      # total number of episodes to train
+        'episodes': 10,      # total number of episodes to train
         'turn_limit': 250,       # max turns per episode
         'batch_size': 64,        # batch size for optimization
         'gamma': 0.99,           # discount factor
@@ -52,7 +53,7 @@ if __name__ == "__main__":
         'checkpoint_every': 200, # save model checkpoint every N episodes
         'latest_every': 1,     # save "latest" checkpoint every N episodes (overwrites previous)
         'save_turns': True ,     # whether to save per-turn data as JSONL files
-        'save_turns_every': 200,  # how often to save per-turn data (in episodes)
+        'save_turns_every': 1,  # how often to save per-turn data (in episodes)
         'progress_bar': True,     # whether to show a progress bar during training  
     }
 

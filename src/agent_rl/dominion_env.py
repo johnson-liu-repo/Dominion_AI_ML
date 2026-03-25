@@ -173,13 +173,12 @@ class DominionBuyPhaseEnv(gym.Env):
             # logger.info(f"Buy phase: {self.bot.player_id} bought {name} (turn {self._turn})")
             reward = 0.0
 
-            # Reward score-impacting buys and card-quality improvements.
-            if CardType.Victory in card.type or CardType.Curse in card.type:
-                # add the victory points of the bought card to the reward
-                reward += card.score()
+            # 
+            if CardType.Curse in card.type:
+                reward += -1
 
-                if CardType.Victory in card.type:
-                    reward += self._victory_card_density()
+            if CardType.Victory in card.type:
+                reward += self._victory_card_density()
             
             elif CardType.Treasure in card.type:
                 reward += self._treasure_density()

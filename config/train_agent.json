@@ -1,0 +1,23 @@
+{
+  "cards": "BASE_CARDS",
+  "seed": 4991,
+  "opponent_bots": [
+    "BigMoney"
+  ],
+  "resume_from": null,
+  "training": {
+    "episodes": 10,
+    "turn_limit": 250,
+    "batch_size": 64,
+    "gamma": 0.99,
+    "epsilon": 1.0,
+    "eps_decay": 0.9995,
+    "eps_min": 0.05,
+    "target_update": 1000,
+    "checkpoint_every": 200,
+    "latest_every": 1,
+    "save_turns": true,
+    "save_turns_every": 1,
+    "progress_bar": true
+  }
+}

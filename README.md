@@ -100,13 +100,12 @@ Dominion_AI_ML/
 
 ---
 
-## Important Things to Know
+## Some notes
 
 - **Pyminion is the underlying game engine.** All game rules, card definitions, and turn mechanics live in `pyminion_master`. Treat it as vendor code; keep custom logic in `src/agent_rl`.
 - **The RL environment is buy-phase only.** `DominionBuyPhaseEnv` (in `dominion_env.py`) internally advances the game through action and treasure phases, exposing only buy decisions to the agent.
-- **Action space is fixed.** The environment uses a fixed action space (one per card + pass). This maintains DQN compatibility but requires masking invalid actions at runtime.
-- **The training loop is intentionally minimal.** `train_dqn.py` is a small DQN baseline with a replay buffer, masking logic, and target network syncs. Use it as a starting point.
-- **Local-path hacks exist.** Several files append a hardcoded path to `sys.path` to load the bundled Pyminion. This should be replaced with repo-relative imports for portability.
+- **Action space is fixed.** The environment uses a fixed action space (one per card + pass).
+- **The training loop is intentionally minimal.** `train_dqn.py` is a small DQN baseline with a replay buffer, masking logic, and target network syncs. This is just a starting point.
 
 ---
 

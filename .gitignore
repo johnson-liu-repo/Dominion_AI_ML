@@ -12,11 +12,12 @@ venv/
 
 # IDEs
 .vscode/
-.idea/
 
-# Logs
+# Logs and data
 scripts/logs/*
 data/*
 
-# Turns data for visualization in Claude's app
+# Context and config for coding agents
+.claude
 claude/*
+codex/*

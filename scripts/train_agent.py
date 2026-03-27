@@ -99,6 +99,7 @@ def load_training_configuration(config_path: Path) -> dict:
         "save_turns": training.get("save_turns", True),
         "save_turns_every": training.get("save_turns_every", 1),
         "progress_bar": training.get("progress_bar", True),
+        "enable_diagnostics": training.get("enable_diagnostics", False),
     }
 
 

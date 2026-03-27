@@ -14,6 +14,7 @@ import torch.optim as optim
 
 # from agent_rl.logging_utils import configure_training_logging
 from agent_rl.training_io import TrainingRunWriter, load_checkpoint, resolve_run_dir
+from agent_rl.diagnostics import DiagnosticsCollector, get_player_deck_counts
 
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -225,6 +226,7 @@ def train_buy_phase(
     save_turns   = config.get('save_turns', True)
     save_turns_every = config.get('save_turns_every', 1)
     progress_bar = config.get('progress_bar', True)
+    enable_diagnostics = config.get('enable_diagnostics', False)
 
 
     # logger = configure_training_logging()
@@ -232,6 +234,7 @@ def train_buy_phase(
     output_dir = Path(output_dir) if output_dir else (repo_root / "data" / "training")
     run_dir = resolve_run_dir(output_dir, run_dir=run_dir, resume_from=resume_from)
     writer = TrainingRunWriter(run_dir)
+    collector = DiagnosticsCollector(run_dir) if enable_diagnostics else None
     input_dim  = env.observation_space.shape[0]
     n_actions  = env.action_space.n                   #  |card_names| + 1 (pass)
 
@@ -265,13 +268,14 @@ def train_buy_phase(
     total_episodes = max(0, episodes - start_episode)
     for ep in range(start_episode, episodes):
         # logger.info(f"\n=== Starting episode {ep:04d} ===")
+        episode_id = ep + 1
         obs, _    = env.reset()
 
         # logger.info("card_names -> supply piles mapping:")
         for name in env.card_names:
             pile = env._pile_for_card(name)
             # logger.info(f"  {name}  -->  {getattr(pile, 'name', 'UNMATCHED')}")
-            
+
         done      = False
         step_ctr  = 0
         ep_reward = 0.0
@@ -284,13 +288,49 @@ def train_buy_phase(
 
         turn = 0
 
+        if collector:
+            collector.reset_episode(episode_id)
+
         # last_info = {}
         while not done:
             mask   = env.valid_action_mask()
             # logger.info(f"Money: {env.bot.state.money}\nBuys: {env.bot.state.buys}\nLegal: {np.flatnonzero(mask)}")
+
+            # Capture pre-step diagnostics snapshot
+            diag_snapshot = None
+            if collector:
+                diag_snapshot = env.buy_phase_snapshot()
+
             act    = select_action(obs, policy_net, mask, epsilon, n_actions)
 
+            # Capture Q-values for diagnostics (optional, one extra forward pass)
+            diag_q_chosen = None
+            diag_top_k = None
+            if collector:
+                with torch.no_grad():
+                    q_all = policy_net(torch.as_tensor(obs, dtype=torch.float32, device=DEVICE))
+                    diag_q_chosen = float(q_all[act].item())
+                    legal_q = q_all.clone()
+                    legal_q[mask == 0] = -1e9
+                    k = min(3, int(mask.sum()))
+                    top_vals, top_idx = torch.topk(legal_q, k)
+                    parts = []
+                    for idx_i, val_i in zip(top_idx.tolist(), top_vals.tolist()):
+                        name = env.card_names[idx_i] if idx_i < len(env.card_names) else "PASS"
+                        parts.append(f"{name}:{val_i:.3f}")
+                    diag_top_k = ";".join(parts)
+
             next_obs, r, done, _ = env.step(act)
+
+            # Record diagnostics for this buy decision
+            if collector and diag_snapshot is not None:
+                card_name = env.card_names[act] if act != env.pass_idx else "NONE"
+                collector.record_buy_decision(
+                    diag_snapshot, act, card_name,
+                    epsilon=epsilon,
+                    q_value_chosen=diag_q_chosen,
+                    top_k_q=diag_top_k,
+                )
             # last_info = info or {}
             next_mask = env.valid_action_mask() if not done else np.zeros_like(mask)
 
@@ -367,7 +407,6 @@ def train_buy_phase(
         # else:
             # logger.info(f"Ep {ep:04d} | steps={step_ctr:3d} | epsilon={epsilon:.3f} | reward={ep_reward:.3f}")
 
-        episode_id = ep + 1
         writer.log_episode({
             "episode": episode_id,
             "steps": step_ctr,
@@ -379,6 +418,24 @@ def train_buy_phase(
 
         if hasattr(env, "game") and hasattr(env.game, "players"):
             writer.log_final_decks(episode_id, env.game.players)
+
+        if collector:
+            rl_deck = get_player_deck_counts(env.bot)
+            opp_deck = {}
+            if opponents:
+                opp_deck = get_player_deck_counts(opponents[0])
+            winners = env.game.get_winners() if hasattr(env, "game") else []
+            did_win = env.bot in winners
+            best_opp_score = max(opponent_scores) if opponent_scores else 0
+            collector.finalize_episode(
+                did_win=did_win,
+                rl_score=RL_agent_score,
+                opp_score=best_opp_score,
+                ep_reward=ep_reward,
+                ep_length=step_ctr,
+                rl_deck_counts=rl_deck,
+                opp_deck_counts=opp_deck,
+            )
 
         turn_events = env.consume_turn_events()
         should_save_turns = save_turns and save_turns_every and (episode_id % save_turns_every == 0)

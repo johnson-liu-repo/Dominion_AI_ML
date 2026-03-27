@@ -139,6 +139,41 @@ class DominionBuyPhaseEnv(gym.Env):
         }
 
 
+    # ---------- diagnostics snapshot --------------------------------------- #
+    def buy_phase_snapshot(self):
+        """Return a dict describing the current buy-phase state for diagnostics.
+
+        Must be called *before* env.step() so the state reflects pre-buy conditions.
+        """
+        money = self.bot.state.money
+        affordable = {}
+        supply_remaining = {}
+        for name in self.card_names:
+            pile = self._pile_for_card(name)
+            if pile and len(pile) > 0:
+                affordable[name] = pile.cards[0].base_cost.money <= money
+            else:
+                affordable[name] = False
+            supply_remaining[name] = len(pile) if pile else 0
+
+        agent_score = self.bot.get_victory_points()
+        opp_scores = [
+            p.get_victory_points() for p in self.game.get_opponents(self.bot)
+        ]
+        best_opp = max(opp_scores) if opp_scores else 0
+
+        return {
+            "coins_available": money,
+            "buys_available": self.bot.state.buys,
+            "score_rl": agent_score,
+            "score_opp": best_opp,
+            "score_diff": agent_score - best_opp,
+            "affordable": affordable,
+            "supply_remaining": supply_remaining,
+            "deck_size_rl": self._player_owned_card_count(self.bot),
+            "turn": self._turn,
+        }
+
     # ---------- buy logic ------------------------------------------------- #
     def _apply_buy(self, action_idx: int):
         """

@@ -31,10 +31,40 @@ def load_csvs(diag_dir: Path):
     return episode, rolling, buy
 
 
+def plot_series(ax, x, y, *, label=None, color=None, linewidth=1.5,
+                alpha=1.0, marker_when_sparse=True):
+    """Plot a series so very small runs still produce visible output."""
+    series = pd.to_numeric(y, errors="coerce")
+    valid = series.notna()
+    x_valid = x[valid]
+    y_valid = series[valid]
+    if y_valid.empty:
+        return
+
+    marker = "o" if marker_when_sparse and len(y_valid) <= 2 else None
+    ax.plot(
+        x_valid,
+        y_valid,
+        linewidth=linewidth,
+        label=label,
+        color=color,
+        alpha=alpha,
+        marker=marker,
+        markersize=5 if marker else None,
+    )
+
+
+def adaptive_window(n_rows: int, cap: int = 200) -> tuple[int, int]:
+    """Choose rolling params that still work for short runs."""
+    window = max(1, min(cap, n_rows))
+    min_periods = 1 if n_rows < 10 else min(10, window)
+    return window, min_periods
+
+
 def plot_a_win_rate(rolling: pd.DataFrame, out: Path):
     """Plot A: Win rate over time."""
     fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(rolling["episode"], rolling["rolling_win_rate"], linewidth=1.5)
+    plot_series(ax, rolling["episode"], rolling["rolling_win_rate"], linewidth=1.5)
     ax.set_xlabel("Episode")
     ax.set_ylabel("Rolling Win Rate")
     ax.set_title("Plot A: Win Rate Over Time")
@@ -50,8 +80,8 @@ def plot_b_score_diff(episode: pd.DataFrame, rolling: pd.DataFrame, out: Path):
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.scatter(episode["episode"], episode["final_score_diff"],
                alpha=0.08, s=4, color="gray", label="raw")
-    ax.plot(rolling["episode"], rolling["rolling_mean_score_diff"],
-            linewidth=1.5, color="blue", label="rolling mean")
+    plot_series(ax, rolling["episode"], rolling["rolling_mean_score_diff"],
+                linewidth=1.5, color="blue", label="rolling mean")
     ax.set_xlabel("Episode")
     ax.set_ylabel("Score Diff (RL - Opponent)")
     ax.set_title("Plot B: Score Difference Over Time")
@@ -65,8 +95,8 @@ def plot_b_score_diff(episode: pd.DataFrame, rolling: pd.DataFrame, out: Path):
 def plot_c_coin_generation(rolling: pd.DataFrame, out: Path):
     """Plot C: Buy-phase coin generation over time."""
     fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(rolling["episode"], rolling["rolling_mean_buy_phase_coins_rl"],
-            linewidth=1.5, label="rolling mean coins")
+    plot_series(ax, rolling["episode"], rolling["rolling_mean_buy_phase_coins_rl"],
+                linewidth=1.5, label="rolling mean coins")
     ax.set_xlabel("Episode")
     ax.set_ylabel("Buy-Phase Coins")
     ax.set_title("Plot C: Buy-Phase Coin Generation Over Time")
@@ -80,10 +110,10 @@ def plot_c_coin_generation(rolling: pd.DataFrame, out: Path):
 def plot_d_affordability(rolling: pd.DataFrame, out: Path):
     """Plot D: Affordability rates over time."""
     fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(rolling["episode"], rolling["rolling_afford_gold_rate_rl"],
-            linewidth=1.5, label="Gold affordable rate")
-    ax.plot(rolling["episode"], rolling["rolling_afford_province_rate_rl"],
-            linewidth=1.5, label="Province affordable rate")
+    plot_series(ax, rolling["episode"], rolling["rolling_afford_gold_rate_rl"],
+                linewidth=1.5, label="Gold affordable rate")
+    plot_series(ax, rolling["episode"], rolling["rolling_afford_province_rate_rl"],
+                linewidth=1.5, label="Province affordable rate")
     ax.set_xlabel("Episode")
     ax.set_ylabel("Rate (fraction of buy opportunities)")
     ax.set_title("Plot D: Affordability Rates Over Time")
@@ -105,8 +135,7 @@ def plot_e_conditional_choice(rolling: pd.DataFrame, out: Path):
         "rolling_buy_silver_given_province_affordable_rl": "Buy Silver | Province affordable",
     }
     for col, label in cols.items():
-        vals = pd.to_numeric(rolling[col], errors="coerce")
-        ax.plot(rolling["episode"], vals, linewidth=1.5, label=label)
+        plot_series(ax, rolling["episode"], rolling[col], linewidth=1.5, label=label)
     ax.set_xlabel("Episode")
     ax.set_ylabel("Conditional Buy Rate")
     ax.set_title("Plot E: Conditional Choice Rates Over Time")
@@ -126,20 +155,19 @@ def plot_f_buy_counts(rolling: pd.DataFrame, episode: pd.DataFrame, out: Path):
         "rolling_buy_province_rate_rl": "Province",
     }
     for col, label in cols.items():
-        vals = pd.to_numeric(rolling[col], errors="coerce")
-        ax.plot(rolling["episode"], vals, linewidth=1.5, label=label)
+        plot_series(ax, rolling["episode"], rolling[col], linewidth=1.5, label=label)
 
     # Compute rolling buy rates for other cards from episode data
-    window = min(200, len(episode))
+    window, min_periods = adaptive_window(len(episode))
     for card, color in [("Copper", "brown"), ("Silver", "silver"),
                         ("Estate", "green"), ("Duchy", "olive"),
                         ("Curse", "purple")]:
         col = f"buy_{card.lower()}_count_rl"
         if col in episode.columns:
-            rate = episode[col].rolling(window, min_periods=10).sum() / \
-                   episode["num_buy_phases_rl"].rolling(window, min_periods=10).sum()
-            ax.plot(episode["episode"], rate, linewidth=1.0, alpha=0.8,
-                    color=color, label=card)
+            rate = episode[col].rolling(window, min_periods=min_periods).sum() / \
+                   episode["num_buy_phases_rl"].rolling(window, min_periods=min_periods).sum()
+            plot_series(ax, episode["episode"], rate, linewidth=1.0, alpha=0.8,
+                        color=color, label=card)
 
     ax.set_xlabel("Episode")
     ax.set_ylabel("Buy Rate (fraction of buy decisions)")
@@ -154,16 +182,16 @@ def plot_f_buy_counts(rolling: pd.DataFrame, episode: pd.DataFrame, out: Path):
 def plot_g_threshold_timing(episode: pd.DataFrame, out: Path):
     """Plot G: First-threshold timing over time."""
     fig, ax = plt.subplots(figsize=(10, 5))
-    window = min(200, len(episode))
+    window, min_periods = adaptive_window(len(episode))
     for col, label, color in [
         ("first_turn_reach_5_coins_rl", "First turn >= 5 coins", "green"),
         ("first_turn_reach_6_coins_rl", "First turn >= 6 coins", "blue"),
         ("first_turn_reach_8_coins_rl", "First turn >= 8 coins", "red"),
     ]:
         vals = pd.to_numeric(episode[col], errors="coerce")
-        rolling_mean = vals.rolling(window, min_periods=10).mean()
-        ax.plot(episode["episode"], rolling_mean, linewidth=1.5,
-                color=color, label=label)
+        rolling_mean = vals.rolling(window, min_periods=min_periods).mean()
+        plot_series(ax, episode["episode"], rolling_mean, linewidth=1.5,
+                    color=color, label=label)
     ax.set_xlabel("Episode")
     ax.set_ylabel("Turn Number (rolling mean)")
     ax.set_title("Plot G: First-Threshold Timing Over Time")
@@ -177,15 +205,15 @@ def plot_g_threshold_timing(episode: pd.DataFrame, out: Path):
 def plot_h_greening_timing(episode: pd.DataFrame, out: Path):
     """Plot H: First-greening timing over time."""
     fig, ax = plt.subplots(figsize=(10, 5))
-    window = min(200, len(episode))
+    window, min_periods = adaptive_window(len(episode))
     for col, label, color in [
         ("first_turn_buy_duchy_rl", "First Duchy buy", "olive"),
         ("first_turn_buy_province_rl", "First Province buy", "darkgreen"),
     ]:
         vals = pd.to_numeric(episode[col], errors="coerce")
-        rolling_mean = vals.rolling(window, min_periods=10).mean()
-        ax.plot(episode["episode"], rolling_mean, linewidth=1.5,
-                color=color, label=label)
+        rolling_mean = vals.rolling(window, min_periods=min_periods).mean()
+        plot_series(ax, episode["episode"], rolling_mean, linewidth=1.5,
+                    color=color, label=label)
     ax.set_xlabel("Episode")
     ax.set_ylabel("Turn Number (rolling mean)")
     ax.set_title("Plot H: First-Greening Timing Over Time")

@@ -190,6 +190,8 @@ ANALYSIS PIPELINE (post-training):
 5. **Evaluation** (post-training):
    - `scripts/plot_episode_metrics.py`: reads `episode_data_over_time.csv` → plots reward trends
    - `scripts/plot_final_deck_card_trends.py`: reads `final_decks.json` + episodes/ → analyzes card acquisition patterns
+   - `scripts/plot_diagnostics.py`: reads `diagnostics/*.csv` → generates training-diagnostics plots
+   - `scripts/generate_diagnostics_report.py`: reads `diagnostics/*.csv` → writes a plain-text diagnostics summary
    - `scripts/reorganize_run_artifacts.py`: tidies output directory structure
 
 ### Output Artifact Structure
@@ -205,6 +207,64 @@ Each training run in `data/training/training_XXX/` produces:
 | `checkpoints/checkpoint_latest.pt` | Most recent model weights + optimizer state; for resuming training | PyTorch .pt (serialized state_dict) |
 | `checkpoints/checkpoint_best.pt` | Best model by eval metric (highest reward or win rate); for inference | PyTorch .pt |
 | `checkpoints/checkpoint_XXXXX.pt` | Periodic snapshots (every N episodes) | PyTorch .pt |
+
+---
+
+## Diagnostics
+
+The training pipeline can collect extra diagnostics about the RL agent's buy decisions, affordability windows, and end-of-episode deck composition.
+
+### Enable diagnostics
+
+Set `"enable_diagnostics": true` under `"training"` in `config/train_agent.json`.
+
+Example:
+
+```json
+{
+  "training": {
+    "enable_diagnostics": true
+  }
+}
+```
+
+Then run training normally:
+
+```powershell
+python scripts/train_agent.py --config config/train_agent.json
+```
+
+Each run writes a `diagnostics/` directory under `data/training/training_XXX/`.
+
+### Diagnostics outputs
+
+The `diagnostics/` directory contains:
+
+- `episode_summary.csv`: one row per episode with win/loss, reward, coin thresholds, buy counts, and final deck composition
+- `buy_decisions.csv`: one row per RL buy decision with current coins, affordable cards, selected action, epsilon, and Q-value context
+- `rolling_metrics.csv`: rolling aggregates for win rate, score diff, economy, and conditional buy behavior
+- `plot_*.png`: generated diagnostics charts
+- `diagnostics_report.txt`: plain-text summary and interpretation
+
+### Generate the plots and report
+
+Replace `training_XXX` with the run you want to inspect.
+
+```powershell
+python scripts/plot_diagnostics.py data/training/training_XXX/diagnostics
+python scripts/generate_diagnostics_report.py data/training/training_XXX/diagnostics
+```
+
+Example:
+
+```powershell
+python scripts/plot_diagnostics.py data/training/training_010/diagnostics
+python scripts/generate_diagnostics_report.py data/training/training_010/diagnostics
+```
+
+### Interpreting small runs
+
+Short runs produce noisy metrics. With very small numbers of episodes, rolling diagnostics are still generated, but the charts should be treated as sanity checks rather than evidence of learning. For meaningful trend analysis, use substantially more than 10 episodes.
 
 ---
 

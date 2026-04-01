@@ -371,8 +371,7 @@ class DiagnosticsCollector:
 
         # -- Update rolling window and write rolling metrics --
         self._recent_summaries.append(summary)
-        if len(self._recent_summaries) >= 10:
-            self._write_rolling_metrics()
+        self._write_rolling_metrics()
 
     # ------------------------------------------------------------------ #
     #  Rolling aggregate metrics                                          #

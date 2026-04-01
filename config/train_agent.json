@@ -6,7 +6,7 @@
   ],
   "resume_from": null,
   "training": {
-    "episodes": 10,
+    "episodes": 1000,
     "turn_limit": 250,
     "batch_size": 64,
     "gamma": 0.99,
@@ -17,7 +17,7 @@
     "checkpoint_every": 200,
     "latest_every": 1,
     "save_turns": true,
-    "save_turns_every": 1,
+    "save_turns_every": 100,
     "progress_bar": true,
     "enable_diagnostics": true
   }

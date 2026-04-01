@@ -1,0 +1,2 @@
+episode,rolling_win_rate,rolling_mean_score_diff,rolling_mean_episode_reward,rolling_mean_buy_phase_coins_rl,rolling_afford_gold_rate_rl,rolling_afford_province_rate_rl,rolling_buy_gold_rate_rl,rolling_buy_province_rate_rl,rolling_buy_gold_given_affordable_rl,rolling_buy_province_given_affordable_rl,rolling_buy_silver_given_gold_affordable_rl,rolling_buy_silver_given_province_affordable_rl,rolling_first_turn_reach_8_mean_rl,rolling_first_turn_buy_province_mean_rl
+10,0.0,-46.0,-109.14,3.67,0.0859,0.0156,0.0078,0.0,0.0909,0.0,0.2727,0.5,13.5,

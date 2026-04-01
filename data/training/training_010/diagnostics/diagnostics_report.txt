@@ -1,0 +1,47 @@
+======================================================================
+  DOMINION RL AGENT -- DIAGNOSTICS REPORT
+======================================================================
+Total episodes analysed: 10
+
+--- Overall Performance ---
+  Win rate:                0.00%
+  Average final score diff: -46.00
+  Average episode reward:   -109.14
+
+--- Economy ---
+  Average buy-phase coins:  3.67
+
+--- Affordability ---
+  % of buy opportunities with Gold affordable:     8.59%
+  % of buy opportunities with Province affordable: 1.56%
+
+--- Conditional Choice Rates ---
+  When Gold affordable, bought Gold:         9.09%
+  When Province affordable, bought Province: 0.00%
+  When Province affordable, most common alternatives:
+    Silver: 2 (50.0%)
+    Copper: 1 (25.0%)
+    NONE: 1 (25.0%)
+
+--- Timing ---
+  Average first turn reaching 8 coins:    13.5
+  Average first turn buying Province:      N/A (never bought)
+
+--- Final Deck Composition (RL Agent Avg) ---
+  Copper:   11.3
+  Silver:   4.7
+  Gold:     0.2
+  Estate:   6.4
+  Duchy:    1.0
+  Province: 0.0
+  Curse:    4.4
+  Deck size:28.0
+
+======================================================================
+  INTERPRETATION
+======================================================================
+  BOTTLENECK: Economy generation.
+  The agent rarely reaches 8 coins. It cannot afford Province.
+  Focus: improve treasure accumulation (buy more Gold/Silver).
+
+======================================================================

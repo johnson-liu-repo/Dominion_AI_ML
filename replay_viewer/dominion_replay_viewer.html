@@ -167,6 +167,21 @@ header{padding:1.1rem 1.4rem .65rem;display:flex;align-items:center;justify-cont
 .tl-dot.has-buy{border-color:rgba(201,168,76,.52);background:rgba(201,168,76,.12);}
 .tl-dot.has-pass{border-color:rgba(100,100,100,.38);}
 .tl-dot.has-illegal{border-color:rgba(180,60,60,.48);background:rgba(180,60,60,.09);}
+.jump-wrap{display:flex;align-items:center;gap:.3rem;}
+.jump-wrap input{width:72px;background:rgba(0,0,0,.25);border:1px solid var(--border);color:var(--parchment);padding:.2rem .35rem;}
+#replay-debug-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:.8rem;margin-top:.8rem;}
+@media(max-width:900px){#replay-debug-grid{grid-template-columns:1fr;}}
+.debug-panel{background:var(--panel2);border:1px solid var(--border);border-radius:3px;padding:.72rem .85rem;}
+.debug-title{font-family:'Cinzel',serif;font-size:.57rem;letter-spacing:.15em;color:var(--gold-dim);text-transform:uppercase;margin-bottom:.42rem;}
+.debug-kv{font-size:.8rem;line-height:1.4;color:rgba(244,232,200,.82);}
+.debug-kv b{color:var(--gold-light);}
+.event-list{max-height:350px;overflow:auto;display:flex;flex-direction:column;gap:2px;padding-right:2px;}
+.event-row{border:1px solid var(--border);background:rgba(0,0,0,.2);padding:.35rem .45rem;cursor:pointer;font-size:.74rem;}
+.event-row:hover{background:rgba(201,168,76,.09);}
+.event-row.active{background:rgba(201,168,76,.17);border-color:var(--border2);}
+.event-row .er-meta{font-family:'Cinzel',serif;font-size:.54rem;letter-spacing:.08em;color:var(--gold-dim);}
+.event-row .er-desc{color:rgba(244,232,200,.9);}
+.empty-data{font-style:italic;color:rgba(244,232,200,.45);}
 /* ── STATS LAYOUT ── */
 #stats-layout{max-width:1200px;margin:0 auto;padding:.6rem .9rem 3rem;}
 .empty-stats{text-align:center;padding:3rem 1rem;font-style:italic;color:rgba(244,232,200,.34);font-size:.93rem;}
@@ -312,6 +327,10 @@ table.games-tbl tr.clickable{cursor:pointer;}
           <button class="nav-btn" id="btn-next"  onclick="goNext()">▶</button>
           <button class="nav-btn" id="btn-last"  onclick="goLast()">⏭</button>
           <div id="turn-label">Start</div>
+          <div class="jump-wrap">
+            <input type="number" id="jump-turn-input" min="1" placeholder="turn #">
+            <button class="nav-btn" id="btn-jump-turn" onclick="jumpToTurn()">Jump Turn</button>
+          </div>
           <div class="ap-div"></div>
           <div class="ap-wrap">
             <button id="play-btn" onclick="togglePlay()" title="Space=play/pause">▶</button>
@@ -334,6 +353,16 @@ table.games-tbl tr.clickable{cursor:pointer;}
         <div id="timeline-section">
           <div class="timeline-title">Timeline — ● = start · gold = buy · grey = pass · click dot or use ← → · Space = play/pause</div>
           <div id="timeline-track"></div>
+        </div>
+        <div id="replay-debug-grid">
+          <div class="debug-panel">
+            <div class="debug-title">Event Inspection</div>
+            <div id="event-inspector" class="debug-kv"><span class="empty-data">No event selected yet.</span></div>
+          </div>
+          <div class="debug-panel">
+            <div class="debug-title">Event History</div>
+            <div id="event-history" class="event-list"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -471,7 +500,8 @@ let cbSortCol=null, cbSortAsc=true;
 
 let R={turns:[],turnMap:{},players:[],currentIdx:0,
   supplyCards:[],pileStates:[],pileEls:{},playerBuyEls:{},
-  isPlaying:false,playSpeed:1000,autoTimer:null,isAnimating:false};
+  isPlaying:false,playSpeed:1000,autoTimer:null,isAnimating:false,
+  events:[],frameStates:[],eventByFrame:[null]};
 
 // ══════════════════════════════════════════════════════
 //  HELPERS
@@ -482,6 +512,9 @@ const sid=s=>String(s).replace(/[^a-zA-Z0-9_-]/g,'_');
 function ctype(n){const k=n.toLowerCase();return CURSE_SET.has(k)?'curse':VICTORY_SET.has(k)?'victory':TREASURE_SET.has(k)?'treasure':'action';}
 function em(n){return EMOJIS[n.toLowerCase()]||'🃏';}
 function avg(arr){return arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:0;}
+function compactList(v){if(!Array.isArray(v)||!v.length)return '—';return v.join(', ');}
+function asNum(v){const n=Number(v);return Number.isFinite(n)?n:null;}
+function asArray(v){return Array.isArray(v)?v:[];}
 function playerColor(pid,players){
   const i=players.indexOf(pid);
   if(i===0)return{bg:'rgba(201,168,76,0.82)',border:'rgba(201,168,76,1)'};
@@ -516,21 +549,70 @@ function computeVP(pid, buysMatrix){
 //  PARSING / BUILD GAME DATA
 // ══════════════════════════════════════════════════════
 function parseJSONL(text){
-  return text.trim().split('\n').map(l=>l.trim()).filter(Boolean)
+  const trimmed=text.trim();
+  if(!trimmed)return [];
+  if((trimmed.startsWith('{')&&trimmed.endsWith('}'))||(trimmed.startsWith('[')&&trimmed.endsWith(']'))){
+    try{
+      const parsed=JSON.parse(trimmed);
+      if(Array.isArray(parsed))return parsed;
+      if(Array.isArray(parsed.events))return parsed.events;
+      return [parsed];
+    }catch{}
+  }
+  return trimmed.split('\n').map(l=>l.trim()).filter(Boolean)
     .map(l=>{try{return JSON.parse(l);}catch{return null;}}).filter(Boolean);
+}
+
+function describeEvent(ev){
+  if(ev.readable_description)return ev.readable_description;
+  const who=ev.player||ev.player_id||'Unknown';
+  const phase=ev.phase?` (${ev.phase})`:'';
+  const buys=asArray(ev.buys).filter(b=>b!=='PASS'&&b!=='ILLEGAL');
+  if(buys.length)return `${who} bought ${buys.join(', ')}${phase}`;
+  if(asArray(ev.buys).includes('PASS'))return `${who} passed buy${phase}`;
+  if(asArray(ev.buys).includes('ILLEGAL'))return `${who} illegal action${phase}`;
+  return `${who} action${phase}`;
+}
+
+function inferCardMoves(ev){
+  const diff=ev.state_diff||{};
+  const out={gained:[],bought:[],played:[],trashed:[],discarded:[],drawn:[],revealed:[]};
+  for(const k of Object.keys(out)){
+    if(Array.isArray(diff[k]))out[k]=diff[k];
+  }
+  const buys=asArray(ev.buys).filter(b=>b!=='PASS'&&b!=='ILLEGAL');
+  if(!out.bought.length&&buys.length)out.bought=buys;
+  return out;
 }
 
 function buildGameData(events,filename){
   if(!events.length)return null;
-  const turnMap={};const pset=new Set();let episodeId=null;
-  for(const ev of events){
-    const t=parseInt(ev.turn);if(isNaN(t))continue;
+  const normalized=[];const turnMap={};const pset=new Set();let episodeId=null;
+  for(let i=0;i<events.length;i++){
+    const raw=events[i];
+    const t=parseInt(raw.turn);if(isNaN(t))continue;
+    const ev={
+      ...raw,
+      index: raw.index ?? i,
+      turn:t,
+      player: raw.player ?? raw.player_id ?? null,
+      player_id: raw.player_id ?? raw.player ?? null,
+      phase: raw.phase ?? raw.subphase ?? null,
+      legal_actions: raw.legal_actions ?? raw.legal_action_set ?? null,
+      reward: raw.reward ?? raw.rl_reward ?? null,
+      value_estimate: raw.value_estimate ?? raw.value ?? null,
+      q_values: raw.q_values ?? null,
+      policy_probs: raw.policy_probs ?? null,
+      readable_description: raw.readable_description ?? describeEvent(raw),
+      state_diff: raw.state_diff ?? null,
+    };
+    normalized.push(ev);
     if(!turnMap[t])turnMap[t]=[];
     turnMap[t].push(ev);
     if(ev.player_id)pset.add(ev.player_id);
     if(ev.episode!=null)episodeId=ev.episode;
   }
-
+  normalized.sort((a,b)=>(a.turn-b.turn)||((a.index??0)-(b.index??0)));
   // Real turns (sorted)
   const realTurns=Object.keys(turnMap).map(Number).sort((a,b)=>a-b);
   if(!realTurns.length)return null;
@@ -546,7 +628,11 @@ function buildGameData(events,filename){
 
   // Supply cards
   const bought=new Set();
-  for(const t of realTurns)for(const ev of turnMap[t]||[])for(const b of ev.buys||[])if(b!=='PASS'&&b!=='ILLEGAL')bought.add(b);
+  for(const ev of normalized){
+    for(const b of asArray(ev.buys))if(b!=='PASS'&&b!=='ILLEGAL')bought.add(b);
+    const moves=inferCardMoves(ev);
+    for(const kind of Object.values(moves))for(const c of kind)bought.add(c);
+  }
   for(const c of ALWAYS_SHOW)bought.add(c);
   const known=SUPPLY_ORDER.filter(c=>bought.has(c));
   const actions=[...bought].filter(c=>!SUPPLY_ORDER.includes(c)).sort((a,b)=>a.localeCompare(b));
@@ -580,8 +666,8 @@ function buildGameData(events,filename){
   // VP estimates
   const vpData={};
   for(const p of players)vpData[p]=computeVP(p,buysMatrix);
-
-  return{filename,episodeId,events,turns,turnMap,players,supplyCards,pileStates,buysMatrix,vpData};
+  const eventByFrame=[null,...normalized];
+  return{filename,episodeId,events:normalized,turns,turnMap,players,supplyCards,pileStates,buysMatrix,vpData,eventByFrame};
 }
 
 // ══════════════════════════════════════════════════════
@@ -649,6 +735,8 @@ function activateGame(key){
   const gd=allGames.get(key);if(!gd)return;
   R.turns=gd.turns;R.turnMap=gd.turnMap;R.players=gd.players;
   R.supplyCards=gd.supplyCards;R.pileStates=gd.pileStates;
+  R.events=gd.events||[];
+  R.eventByFrame=gd.eventByFrame||[null];
   R.pileEls={};R.playerBuyEls={};R.currentIdx=0;
   document.getElementById('meta-episode').textContent=gd.episodeId??'—';
   document.getElementById('meta-turns').textContent=gd.turns.length-1; // exclude virtual turn 0
@@ -658,8 +746,8 @@ function activateGame(key){
   renderVPPanel(gd);
 
   const sl=document.getElementById('turn-slider');
-  sl.min=0;sl.max=gd.turns.length-1;sl.value=0;
-  buildTimeline();buildSupplyDOM();renderTurn(0,false);
+  sl.min=0;sl.max=R.eventByFrame.length-1;sl.value=0;
+  buildTimeline();buildSupplyDOM();refreshEventHistory();renderTurn(0,false);
   highlightGameItem(key);
 }
 
@@ -760,13 +848,26 @@ function renderPlayers(events,isTurn0){
     const isRL=/rl|agent/i.test(pid),id=sid(pid);
     const panel=document.createElement('div');panel.className=`player-panel ${isRL?'is-rl':'is-opp'}`;
     const hand=ev?.hand||[];const hc={};for(const c of hand)hc[c]=(hc[c]||0)+1;
+    const deckSize=ev?.deck_size ?? ev?.zones?.deck_size ?? '—';
+    const discard=ev?.discard ?? ev?.zones?.discard ?? [];
+    const inPlay=ev?.in_play ?? ev?.zones?.in_play ?? [];
+    const actions=ev?.actions ?? ev?.turn_state?.actions ?? '—';
+    const buysAvail=ev?.buys_available ?? ev?.turn_state?.buys ?? '—';
+    const coins=ev?.coins ?? ev?.money ?? ev?.turn_state?.coins ?? '—';
     panel.innerHTML=`<div class="player-name-row"><span class="player-name">${esc(pid)}</span><span class="player-badge">${isRL?'RL AGENT':'OPPONENT'}</span></div>
+      <div class="section-label">Turn State</div><div class="card-list"><span class="card-chip">Actions: ${actions} · Buys: ${buysAvail} · Coins: ${coins}</span><span class="card-chip">Deck size: ${deckSize}</span></div>
       <div class="section-label">Hand — ${hand.length} cards</div><div class="card-list" id="hand-${id}"></div>
+      <div class="section-label">Discard</div><div class="card-list" id="discard-${id}"></div>
+      <div class="section-label">In Play</div><div class="card-list" id="play-${id}"></div>
       <div class="section-label">Buys</div><div class="card-list" id="buys-${id}"></div>`;
     grid.appendChild(panel);
     const handEl=panel.querySelector(`#hand-${id}`);
     if(Object.keys(hc).length){let d=0;for(const[name,cnt]of Object.entries(hc)){const chip=document.createElement('span');chip.className=`card-chip card-${ctype(name)}`;chip.textContent=`${em(name)} ${name}${cnt>1?' ×'+cnt:''}`;chip.style.animationDelay=d+'ms';d+=14;handEl.appendChild(chip);}}
     else handEl.innerHTML='<span class="empty-note">No data</span>';
+    const discardEl=panel.querySelector(`#discard-${id}`),playEl=panel.querySelector(`#play-${id}`);
+    const renderZone=(target,zone)=>{if(!zone||!zone.length){target.innerHTML='<span class="empty-note">Data unavailable</span>';return;}for(const c of zone){const chip=document.createElement('span');chip.className=`card-chip card-${ctype(c)}`;chip.textContent=`${em(c)} ${c}`;target.appendChild(chip);}};
+    renderZone(discardEl,discard);
+    renderZone(playEl,inPlay);
     const buysEl=panel.querySelector(`#buys-${id}`);R.playerBuyEls[pid]=buysEl;
     let hasContent=false;
     if(ev?.buys?.length)for(const b of ev.buys)if(b==='PASS'||b==='ILLEGAL'){const chip=document.createElement('span');chip.className=`card-chip buy-chip ${b==='PASS'?'buy-pass':'buy-illegal'}`;chip.textContent=b==='PASS'?'— Pass':'✗ Illegal';buysEl.appendChild(chip);hasContent=true;}
@@ -829,56 +930,68 @@ function scheduleAnims(idx,events,animDur){
 //  CORE RENDER
 // ══════════════════════════════════════════════════════
 function renderTurn(idx,animate){
-  const tn=R.turns[idx];
-  const isTurn0=(tn===0);
-  const events=R.turnMap[tn]||[];
-  const lastRealTurn=R.turns[R.turns.length-1];
+  const safeIdx=clamp(idx,0,Math.max(0,R.eventByFrame.length-1));
+  const ev=R.eventByFrame[safeIdx]||null;
+  const tn=ev?.turn??0;
+  const isTurn0=!ev;
+  const turnEvents=isTurn0?[]:(R.turnMap[tn]||[]);
+  const visibleTurnEvents=isTurn0?[]:turnEvents.filter(e=>{
+    const frameIdx=R.eventByFrame.indexOf(e);
+    return frameIdx>0&&frameIdx<=safeIdx;
+  });
+  const lastRealTurn=R.turns[R.turns.length-1]||0;
 
-  // Turn label: treat turn 0 as "Start"
-  const turnLabel=isTurn0?'Start':`Turn ${tn} / ${lastRealTurn}`;
+  const turnLabel=isTurn0?'Start':`Turn ${tn} / ${lastRealTurn} · Event ${safeIdx}/${R.eventByFrame.length-1}`;
   document.getElementById('turn-label').textContent=turnLabel;
   document.getElementById('turn-slider').value=idx;
   document.getElementById('btn-first').disabled=idx===0;
   document.getElementById('btn-prev').disabled=idx===0;
-  document.getElementById('btn-next').disabled=idx===R.turns.length-1;
-  document.getElementById('btn-last').disabled=idx===R.turns.length-1;
+  document.getElementById('btn-next').disabled=idx===R.eventByFrame.length-1;
+  document.getElementById('btn-last').disabled=idx===R.eventByFrame.length-1;
   updateDot(idx);
+  renderEventInspector(ev,safeIdx);
+  highlightHistoryEvent(safeIdx);
 
   // Show/hide turn 0 banner and player panels
   document.getElementById('turn0-banner').style.display=isTurn0?'block':'none';
   document.getElementById('players-grid').style.display=isTurn0?'none':'grid';
 
-  renderPlayers(events,isTurn0);
+  renderPlayers(visibleTurnEvents,isTurn0);
 
   if(isTurn0){
-    // Show initial supply (pileStates[0]) with no animation
     R.isAnimating=false;
     updateSupply(R.pileStates[0],false);
     return;
   }
-
-  if(animate){
-    const dur=R.playSpeed<=SKIP_ANIM?0:Math.min(680,R.playSpeed*.68);
-    updateSupply(R.pileStates[idx],false); // pre-buy supply
-    scheduleAnims(idx,events,dur);
-  }else{
-    R.isAnimating=false;
-    updateSupply(R.pileStates[idx+1],false); // post-buy supply
-    addBuyChips(events);
+  const supply={...R.pileStates[0]};
+  for(let i=1;i<=safeIdx;i++){
+    const e=R.eventByFrame[i];
+    if(!e)continue;
+    for(const b of asArray(e.buys))if(b!=='PASS'&&b!=='ILLEGAL'&&supply[b]!=null)supply[b]=Math.max(0,supply[b]-1);
   }
+  R.isAnimating=false;
+  updateSupply(supply,false);
+  addBuyChips(visibleTurnEvents);
 }
 
 // ══════════════════════════════════════════════════════
 //  NAVIGATION
 // ══════════════════════════════════════════════════════
 function goTo(i,anim){
-  const p=R.currentIdx;R.currentIdx=clamp(i,0,R.turns.length-1);
+  const p=R.currentIdx;R.currentIdx=clamp(i,0,Math.max(0,R.eventByFrame.length-1));
   renderTurn(R.currentIdx,anim!==undefined?anim:R.currentIdx===p+1);
 }
 function goFirst(){stopPlay();goTo(0,false);}
-function goLast(){stopPlay();goTo(R.turns.length-1,false);}
+function goLast(){stopPlay();goTo(R.eventByFrame.length-1,false);}
 function goPrev(){if(R.currentIdx>0){stopPlay();goTo(R.currentIdx-1,false);}}
-function goNext(){if(R.currentIdx<R.turns.length-1){stopPlay();goTo(R.currentIdx+1,true);}}
+function goNext(){if(R.currentIdx<R.eventByFrame.length-1){stopPlay();goTo(R.currentIdx+1,true);}}
+function jumpToTurn(){
+  const raw=document.getElementById('jump-turn-input').value;
+  const target=parseInt(raw,10);
+  if(!Number.isFinite(target))return;
+  const idx=R.eventByFrame.findIndex((ev,i)=>i>0&&ev&&ev.turn===target);
+  if(idx>=0){stopPlay();goTo(idx,false);}
+}
 
 document.getElementById('turn-slider').addEventListener('input',e=>{stopPlay();goTo(parseInt(e.target.value),false);});
 document.addEventListener('keydown',e=>{
@@ -894,11 +1007,11 @@ document.addEventListener('keydown',e=>{
 // ══════════════════════════════════════════════════════
 //  AUTOPLAY
 // ══════════════════════════════════════════════════════
-function togglePlay(){R.isPlaying?stopPlay():(R.currentIdx>=R.turns.length-1&&goTo(0,false),startPlay());}
+function togglePlay(){R.isPlaying?stopPlay():(R.currentIdx>=R.eventByFrame.length-1&&goTo(0,false),startPlay());}
 function startPlay(){R.isPlaying=true;const b=document.getElementById('play-btn');b.textContent='⏸';b.classList.add('playing');schedNext();}
 function stopPlay(){R.isPlaying=false;if(R.autoTimer){clearTimeout(R.autoTimer);R.autoTimer=null;}const b=document.getElementById('play-btn');if(b){b.textContent='▶';b.classList.remove('playing');}}
-function schedNext(){if(!R.isPlaying||R.currentIdx>=R.turns.length-1){stopPlay();return;}R.autoTimer=setTimeout(()=>{R.autoTimer=null;if(!R.isPlaying)return;if(R.isAnimating&&R.playSpeed>SKIP_ANIM){R.autoTimer=setTimeout(()=>{R.autoTimer=null;adv();},80);}else adv();},R.playSpeed);}
-function adv(){if(!R.isPlaying||R.currentIdx>=R.turns.length-1){stopPlay();return;}R.currentIdx++;renderTurn(R.currentIdx,true);schedNext();}
+function schedNext(){if(!R.isPlaying||R.currentIdx>=R.eventByFrame.length-1){stopPlay();return;}R.autoTimer=setTimeout(()=>{R.autoTimer=null;if(!R.isPlaying)return;if(R.isAnimating&&R.playSpeed>SKIP_ANIM){R.autoTimer=setTimeout(()=>{R.autoTimer=null;adv();},80);}else adv();},R.playSpeed);}
+function adv(){if(!R.isPlaying||R.currentIdx>=R.eventByFrame.length-1){stopPlay();return;}R.currentIdx++;renderTurn(R.currentIdx,true);schedNext();}
 function setSpeed(i){R.playSpeed=SPEED_PRESETS[i].ms;document.querySelectorAll('.speed-btn').forEach((b,j)=>b.classList.toggle('active',j===i));}
 
 // ══════════════════════════════════════════════════════
@@ -906,15 +1019,16 @@ function setSpeed(i){R.playSpeed=SPEED_PRESETS[i].ms;document.querySelectorAll('
 // ══════════════════════════════════════════════════════
 function buildTimeline(){
   const track=document.getElementById('timeline-track');track.innerHTML='';
-  for(let i=0;i<R.turns.length;i++){
-    const tn=R.turns[i];
+  for(let i=0;i<R.eventByFrame.length;i++){
+    const ev=R.eventByFrame[i];
+    const tn=ev?.turn??0;
     let cls;
     if(tn===0){cls='is-start';}
     else{
-      const buys=(R.turnMap[tn]||[]).flatMap(e=>e.buys||[]);
+      const buys=asArray(ev?.buys);
       cls=buys.some(b=>b!=='PASS'&&b!=='ILLEGAL')?'has-buy':buys.some(b=>b==='ILLEGAL')?'has-illegal':'has-pass';
     }
-    const d=document.createElement('div');d.className=`tl-dot ${cls}`;d.title=tn===0?'Start':(`Turn ${tn}`);
+    const d=document.createElement('div');d.className=`tl-dot ${cls}`;d.title=tn===0?'Start':(`Turn ${tn} · Event ${i}`);
     d.onclick=()=>{stopPlay();goTo(i,false);};track.appendChild(d);
   }
 }
@@ -922,6 +1036,55 @@ function buildTimeline(){
 function updateDot(idx){
   document.querySelectorAll('.tl-dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
   document.querySelectorAll('.tl-dot')[idx]?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+}
+
+function renderEventInspector(ev,idx){
+  const box=document.getElementById('event-inspector');
+  if(!ev){
+    box.innerHTML='<span class="empty-data">Replay start frame. No action yet.</span>';
+    return;
+  }
+  const moves=inferCardMoves(ev);
+  box.innerHTML=`
+    <div><b>Index:</b> ${idx}</div>
+    <div><b>Turn:</b> ${ev.turn ?? '—'}</div>
+    <div><b>Player:</b> ${esc(ev.player_id ?? '—')}</div>
+    <div><b>Phase:</b> ${esc(ev.phase ?? 'Data unavailable')}</div>
+    <div><b>Action:</b> ${esc(ev.action_type ?? 'buy')}</div>
+    <div><b>Description:</b> ${esc(ev.readable_description ?? describeEvent(ev))}</div>
+    <div><b>Reward:</b> ${ev.reward ?? 'Data unavailable'}</div>
+    <div><b>Legal actions:</b> ${Array.isArray(ev.legal_actions)?esc(ev.legal_actions.join(', ')):'Data unavailable'}</div>
+    <div><b>State diff:</b> ${ev.state_diff?esc(JSON.stringify(ev.state_diff)):'Data unavailable'}</div>
+    <div><b>Card moves:</b> gained[${compactList(moves.gained)}] · bought[${compactList(moves.bought)}] · played[${compactList(moves.played)}] · trashed[${compactList(moves.trashed)}] · discarded[${compactList(moves.discarded)}] · drawn[${compactList(moves.drawn)}] · revealed[${compactList(moves.revealed)}]</div>
+    <div><b>Policy/Q metadata:</b> ${ev.policy_probs||ev.q_values||ev.value_estimate?'present':'Data unavailable'}</div>
+  `;
+}
+
+function refreshEventHistory(){
+  const container=document.getElementById('event-history');
+  if(!container)return;
+  container.innerHTML='';
+  for(let i=0;i<R.eventByFrame.length;i++){
+    const ev=R.eventByFrame[i];
+    const row=document.createElement('div');
+    row.className='event-row';
+    row.dataset.frame=String(i);
+    if(!ev){
+      row.innerHTML='<div class="er-meta">START</div><div class="er-desc">Initial state</div>';
+    }else{
+      row.innerHTML=`<div class="er-meta">T${ev.turn} · #${i} · ${esc(ev.player_id||'Unknown')}</div><div class="er-desc">${esc(ev.readable_description||describeEvent(ev))}</div>`;
+    }
+    row.onclick=()=>{stopPlay();goTo(i,false);};
+    container.appendChild(row);
+  }
+}
+
+function highlightHistoryEvent(idx){
+  document.querySelectorAll('.event-row').forEach(row=>{
+    row.classList.toggle('active',Number(row.dataset.frame)===idx);
+  });
+  const current=[...document.querySelectorAll('.event-row')].find(r=>Number(r.dataset.frame)===idx);
+  current?.scrollIntoView({block:'nearest'});
 }
 
 // ══════════════════════════════════════════════════════

@@ -242,9 +242,11 @@ The `diagnostics/` directory contains:
 
 - `episode_summary.csv`: one row per episode with win/loss, reward, coin thresholds, buy counts, and final deck composition
 - `buy_decisions.csv`: one row per RL buy decision with current coins, affordable cards, selected action, epsilon, and Q-value context
-- `rolling_metrics.csv`: rolling aggregates for win rate, score diff, economy, and conditional buy behavior
-- `plot_*.png`: generated diagnostics charts
-- `diagnostics_report.txt`: plain-text summary and interpretation
+- `rolling_metrics.csv`: rolling aggregates for economy development, purchase timing, greening tempo, conditional choices, and training-process metrics
+- `coin_bucket_summary.csv`: per-episode coin-bucket action and pass-rate summaries (buckets 2,3,4,5,6,7,8+)
+- `training_step_metrics.csv`: per-update loss/TD/Q diagnostics for train-process analysis
+- `results/plots/*.png`: generated diagnostics charts
+- `results/diagnostics_report.txt`: plain-text summary and interpretation
 
 ### Generate the plots and report
 

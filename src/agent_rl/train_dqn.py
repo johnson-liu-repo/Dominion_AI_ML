@@ -184,7 +184,7 @@ def select_action(
         # logger.info(f"Valid indices for random selection: {valid_idxs}...")
         choice = int(np.random.choice(valid_idxs))
         # logger.info(f"Randomly selected action index {choice}...")
-        return choice
+        return choice, True
 
     # ---------- greedy but legal -------------
     with torch.no_grad():
@@ -195,7 +195,7 @@ def select_action(
             q[illegal] = -1e9
         else:
             q[:, illegal] = -1e9
-        return int(torch.argmax(q).item())
+        return int(torch.argmax(q).item()), False
 
 
 
@@ -301,7 +301,7 @@ def train_buy_phase(
             if collector:
                 diag_snapshot = env.buy_phase_snapshot()
 
-            act    = select_action(obs, policy_net, mask, epsilon, n_actions)
+            act, was_random = select_action(obs, policy_net, mask, epsilon, n_actions)
 
             # Capture Q-values for diagnostics (optional, one extra forward pass)
             diag_q_chosen = None
@@ -326,7 +326,7 @@ def train_buy_phase(
             if collector and diag_snapshot is not None:
                 card_name = env.card_names[act] if act != env.pass_idx else "NONE"
                 collector.record_buy_decision(
-                    diag_snapshot, act, card_name,
+                    diag_snapshot, act, card_name, was_random=was_random,
                     epsilon=epsilon,
                     q_value_chosen=diag_q_chosen,
                     top_k_q=diag_top_k,
@@ -371,11 +371,22 @@ def train_buy_phase(
                     v_nxt = q_target.gather(1, next_act).squeeze(1)
 
                 target = rew_b + gamma * v_nxt * (1.0 - done_b)
+                td_error = (target - q_sa).detach()
                 loss   = loss_fn(q_sa, target)
 
                 opt.zero_grad()
                 loss.backward()
                 opt.step()
+
+                if collector:
+                    collector.record_training_step(
+                        global_step=global_step,
+                        loss=float(loss.item()),
+                        td_error=td_error.detach().cpu().numpy(),
+                        q_sa=q_sa.detach().cpu().numpy(),
+                        target=target.detach().cpu().numpy(),
+                        epsilon=epsilon,
+                    )
 
             if global_step % target_update == 0:
                 target_net.load_state_dict(policy_net.state_dict())
@@ -419,6 +430,8 @@ def train_buy_phase(
         if hasattr(env, "game") and hasattr(env.game, "players"):
             writer.log_final_decks(episode_id, env.game.players)
 
+        turn_events = env.consume_turn_events()
+
         if collector:
             rl_deck = get_player_deck_counts(env.bot)
             opp_deck = {}
@@ -435,9 +448,10 @@ def train_buy_phase(
                 ep_length=step_ctr,
                 rl_deck_counts=rl_deck,
                 opp_deck_counts=opp_deck,
+                turn_events=turn_events,
+                rl_player_id=getattr(env.bot, "player_id", "RL"),
             )
 
-        turn_events = env.consume_turn_events()
         should_save_turns = save_turns and save_turns_every and (episode_id % save_turns_every == 0)
         if should_save_turns:
             for event in turn_events:

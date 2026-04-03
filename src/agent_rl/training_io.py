@@ -2,6 +2,7 @@
 
 import csv
 import json
+import time
 from collections import Counter
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
@@ -12,12 +13,29 @@ import torch
 # Consistent CSV schema for per-episode summaries.
 EPISODE_CSV_HEADER = [
     "episode",
+    "global_episode",
+    "source_episode",
     "steps",
     "reward",
     "score_diff",
     "epsilon",
     "timestamp",
 ]
+
+WEIGHTS_INDEX_HEADER = [
+    "episode",
+    "global_episode",
+    "source_episode",
+    "checkpoint",
+]
+
+
+def _read_existing_header(path: Path) -> Optional[List[str]]:
+    if not path.exists():
+        return None
+    with path.open("r", newline="") as f:
+        reader = csv.reader(f)
+        return next(reader, None) or None
 
 def _tiered_episode_dir(root: Path, prefix: str, episode_idx: int) -> Path:
     """
@@ -48,6 +66,24 @@ def _safe_int_suffix(name: str, prefix: str) -> Optional[int]:
     return int(suffix) if suffix.isdigit() else None
 
 
+def infer_source_run_dir(path: Optional[Path]) -> Optional[Path]:
+    """Infer the training run directory from a checkpoint or run path."""
+    if path is None:
+        return None
+
+    candidate = Path(path)
+    if candidate.is_file():
+        for parent in candidate.parents:
+            if parent.name == "checkpoints":
+                return parent.parent
+        return candidate.parent
+    if candidate.is_dir():
+        if candidate.name == "checkpoints":
+            return candidate.parent
+        return candidate
+    return None
+
+
 def _count_card_names(cards: Iterable[Any]) -> Dict[str, int]:
     counts: Counter = Counter()
     for card in cards:
@@ -62,13 +98,14 @@ def resolve_run_dir(
     output_dir: Path,
     run_dir: Optional[Path] = None,
     resume_from: Optional[Path] = None,
+    force_new_run: bool = False,
 ) -> Path:
     """
     Decide which run directory to use for training outputs.
 
     Priority:
     1) `run_dir` if provided (created if missing),
-    2) `resume_from` (file or dir),
+    2) `resume_from` (file or dir) when not forcing a new run,
     3) auto-create next `training_XXX` folder inside `output_dir`.
     """
     if run_dir is not None:
@@ -76,15 +113,10 @@ def resolve_run_dir(
         run_dir.mkdir(parents=True, exist_ok=True)
         return run_dir
 
-    if resume_from is not None:
-        resume_from = Path(resume_from)
-        if resume_from.is_file():
-            for parent in resume_from.parents:
-                if parent.name == "checkpoints":
-                    return parent.parent
-            return resume_from.parent
-        if resume_from.is_dir():
-            return resume_from
+    if resume_from is not None and not force_new_run:
+        inferred = infer_source_run_dir(resume_from)
+        if inferred is not None:
+            return inferred
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -111,21 +143,24 @@ class TrainingRunWriter:
         self.run_dir = Path(run_dir)
         self.episodes_dir = self.run_dir / "episodes"
         self.checkpoints_dir = self.run_dir / "checkpoints"
+        self.continuation_metadata_json = self.run_dir / "continuation_metadata.json"
         self.episodes_dir.mkdir(parents=True, exist_ok=True)
         self.checkpoints_dir.mkdir(parents=True, exist_ok=True)
 
         # Initialize the episode summary CSV if it does not exist yet.
         self.episode_csv = self.run_dir / "episode_data_over_time.csv"
+        self.episode_csv_fieldnames = _read_existing_header(self.episode_csv) or EPISODE_CSV_HEADER
         if not self.episode_csv.exists():
             with self.episode_csv.open("w", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=EPISODE_CSV_HEADER)
+                writer = csv.DictWriter(f, fieldnames=self.episode_csv_fieldnames)
                 writer.writeheader()
 
         # Track checkpoint paths per episode in a separate CSV.
         self.weights_index = self.run_dir / "model_weights_over_time.csv"
+        self.weights_index_fieldnames = _read_existing_header(self.weights_index) or WEIGHTS_INDEX_HEADER
         if not self.weights_index.exists():
             with self.weights_index.open("w", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=["episode", "checkpoint"])
+                writer = csv.DictWriter(f, fieldnames=self.weights_index_fieldnames)
                 writer.writeheader()
 
         # Initialize the final decks JSON file if it does not exist yet.
@@ -137,8 +172,16 @@ class TrainingRunWriter:
     def log_episode(self, row: Dict[str, Any]) -> None:
         """Append a single episode summary row to the CSV."""
         with self.episode_csv.open("a", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=EPISODE_CSV_HEADER)
-            writer.writerow(row)
+            writer = csv.DictWriter(f, fieldnames=self.episode_csv_fieldnames)
+            writer.writerow({key: row.get(key, "") for key in self.episode_csv_fieldnames})
+
+    def write_continuation_metadata(self, metadata: Dict[str, Any]) -> Path:
+        """Write continuation provenance metadata for forked runs."""
+        payload = dict(metadata)
+        payload.setdefault("created_at", time.time())
+        with self.continuation_metadata_json.open("w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=True, indent=2)
+        return self.continuation_metadata_json
 
     def write_turns(self, episode_idx: int, events: List[Dict[str, Any]]) -> Path:
         """Write a JSONL file containing per-turn events for an episode."""
@@ -162,16 +205,38 @@ class TrainingRunWriter:
         torch.save(payload, path)
         return path
 
-    def log_weights_checkpoint(self, episode_idx: int, checkpoint_path: Path) -> None:
+    def log_weights_checkpoint(
+        self,
+        episode_idx: int,
+        checkpoint_path: Path,
+        *,
+        global_episode: Optional[int] = None,
+        source_episode: Optional[int] = None,
+    ) -> None:
         """Append the checkpoint path used for a given episode."""
         with self.weights_index.open("a", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=["episode", "checkpoint"])
-            writer.writerow({"episode": episode_idx, "checkpoint": str(checkpoint_path)})
+            writer = csv.DictWriter(f, fieldnames=self.weights_index_fieldnames)
+            row = {
+                "episode": episode_idx,
+                "global_episode": "" if global_episode is None else int(global_episode),
+                "source_episode": "" if source_episode is None else int(source_episode),
+                "checkpoint": str(checkpoint_path),
+            }
+            writer.writerow({key: row.get(key, "") for key in self.weights_index_fieldnames})
 
-    def log_final_decks(self, episode_idx: int, players: Iterable[Any]) -> Path:
+    def log_final_decks(
+        self,
+        episode_idx: int,
+        players: Iterable[Any],
+        *,
+        global_episode: Optional[int] = None,
+        source_episode: Optional[int] = None,
+    ) -> Path:
         """Append final deck contents for all players to final_decks.json."""
         entry = {
             "episode": int(episode_idx),
+            "global_episode": None if global_episode is None else int(global_episode),
+            "source_episode": None if source_episode is None else int(source_episode),
             "players": [],
         }
         for idx, player in enumerate(players):

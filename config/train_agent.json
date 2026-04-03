@@ -4,9 +4,19 @@
   "opponent_bots": [
     "BigMoney"
   ],
+  "output_dir": null,
+  "run_dir": null,
   "resume_from": null,
+  "continue_training": {
+    "enabled": true,
+    "checkpoint_path": "data/training/training_011/checkpoints/checkpoint_latest.pt",
+    "output_dir": "data/training",
+    "run_dir": null,
+    "inherit_optimizer_state": true,
+    "inherit_epsilon_schedule": true
+  },
   "training": {
-    "episodes": 1000,
+    "episodes": 100,
     "turn_limit": 250,
     "batch_size": 64,
     "gamma": 0.99,

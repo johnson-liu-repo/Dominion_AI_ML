@@ -1,0 +1,221 @@
+train_agent.json notes and examples
+
+This file explains the fields in config/train_agent.json without using JSON comments.
+
+Top-level fields
+
+- cards
+  Card set key from scripts/train_agent.py. Current example: BASE_CARDS
+
+- seed
+  RNG seed used when constructing the environment.
+
+- opponent_bots
+  List of scripted opponent names. Current supported examples in the code:
+  - BigMoney
+  - BigMoneyUltimate
+
+- output_dir
+  Parent directory for auto-created runs such as:
+  data/training/training_013
+
+  Example:
+  "output_dir": "data/training"
+
+- run_dir
+  Exact run directory to use instead of auto-creating the next training_XXX folder.
+
+  Example:
+  "run_dir": "data/training/training_013"
+
+- resume_from
+  Legacy in-place resume mode.
+  This continues training inside the source run directory.
+  Point it to a checkpoint file or a run-related path.
+
+  Example:
+  "resume_from": "data/training/training_011/checkpoints/checkpoint_latest.pt"
+
+continue_training block
+
+Use this when you want to load an old checkpoint but save all new artifacts into a new run directory.
+
+- enabled
+  true enables forked continuation mode.
+
+- checkpoint_path
+  Source checkpoint to continue from.
+
+  Example:
+  "checkpoint_path": "data/training/training_011/checkpoints/checkpoint_latest.pt"
+
+- output_dir
+  Parent directory where the next continuation run should be created automatically.
+  Mutually exclusive with continue_training.run_dir.
+
+  Example:
+  "output_dir": "data/training"
+
+- run_dir
+  Exact directory to use for the continuation run.
+  Mutually exclusive with continue_training.output_dir.
+
+  Example:
+  "run_dir": "data/training/training_020"
+
+- inherit_optimizer_state
+  true means restore optimizer state from the checkpoint.
+  false means load model state only and start with a fresh optimizer.
+
+- inherit_epsilon_schedule
+  true means restore epsilon and epsilon decay from the checkpoint.
+  false means use the values from the training block below.
+
+training block
+
+- episodes
+  Number of episodes to run for this invocation.
+
+- turn_limit
+  Maximum turns per episode before forced termination.
+
+- batch_size
+  Replay-buffer sample size for each SGD update.
+
+- gamma
+  Discount factor.
+
+- epsilon
+  Starting epsilon if not inherited from a checkpoint.
+
+- eps_decay
+  Per-step epsilon decay multiplier.
+
+- eps_min
+  Minimum epsilon floor.
+
+- target_update
+  Frequency, in training steps, for syncing the target network.
+
+- checkpoint_every
+  Save a numbered checkpoint every N episodes.
+
+- latest_every
+  Refresh checkpoint_latest every N episodes.
+
+- save_turns
+  Whether to save turn-by-turn JSONL logs.
+
+- save_turns_every
+  Save turn logs every N episodes when save_turns is true.
+
+- progress_bar
+  Show terminal progress output.
+
+- enable_diagnostics
+  Write diagnostics CSVs and related artifacts.
+
+Example 1: normal fresh training
+
+{
+  "cards": "BASE_CARDS",
+  "seed": 4991,
+  "opponent_bots": ["BigMoney"],
+  "output_dir": "data/training",
+  "run_dir": null,
+  "resume_from": null,
+  "continue_training": {
+    "enabled": false,
+    "checkpoint_path": null,
+    "output_dir": null,
+    "run_dir": null,
+    "inherit_optimizer_state": true,
+    "inherit_epsilon_schedule": true
+  },
+  "training": {
+    "episodes": 100,
+    "turn_limit": 250,
+    "batch_size": 64,
+    "gamma": 0.99,
+    "epsilon": 1.0,
+    "eps_decay": 0.9995,
+    "eps_min": 0.05,
+    "target_update": 1000,
+    "checkpoint_every": 200,
+    "latest_every": 1,
+    "save_turns": true,
+    "save_turns_every": 100,
+    "progress_bar": true,
+    "enable_diagnostics": true
+  }
+}
+
+Example 2: in-place resume into the same old run
+
+{
+  "cards": "BASE_CARDS",
+  "seed": 4991,
+  "opponent_bots": ["BigMoney"],
+  "output_dir": null,
+  "run_dir": null,
+  "resume_from": "data/training/training_011/checkpoints/checkpoint_latest.pt",
+  "continue_training": {
+    "enabled": false,
+    "checkpoint_path": null,
+    "output_dir": null,
+    "run_dir": null,
+    "inherit_optimizer_state": true,
+    "inherit_epsilon_schedule": true
+  },
+  "training": {
+    "episodes": 200,
+    "turn_limit": 250,
+    "batch_size": 64,
+    "gamma": 0.99,
+    "epsilon": 1.0,
+    "eps_decay": 0.9995,
+    "eps_min": 0.05,
+    "target_update": 1000,
+    "checkpoint_every": 200,
+    "latest_every": 1,
+    "save_turns": true,
+    "save_turns_every": 100,
+    "progress_bar": true,
+    "enable_diagnostics": true
+  }
+}
+
+Example 3: forked continuation into a new run
+
+{
+  "cards": "BASE_CARDS",
+  "seed": 4991,
+  "opponent_bots": ["BigMoney"],
+  "output_dir": null,
+  "run_dir": null,
+  "resume_from": null,
+  "continue_training": {
+    "enabled": true,
+    "checkpoint_path": "data/training/training_011/checkpoints/checkpoint_latest.pt",
+    "output_dir": "data/training",
+    "run_dir": null,
+    "inherit_optimizer_state": true,
+    "inherit_epsilon_schedule": true
+  },
+  "training": {
+    "episodes": 100,
+    "turn_limit": 250,
+    "batch_size": 64,
+    "gamma": 0.99,
+    "epsilon": 1.0,
+    "eps_decay": 0.9995,
+    "eps_min": 0.05,
+    "target_update": 1000,
+    "checkpoint_every": 200,
+    "latest_every": 1,
+    "save_turns": true,
+    "save_turns_every": 100,
+    "progress_bar": true,
+    "enable_diagnostics": true
+  }
+}

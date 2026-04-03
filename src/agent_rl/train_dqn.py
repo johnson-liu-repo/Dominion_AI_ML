@@ -13,7 +13,12 @@ import torch.nn as nn
 import torch.optim as optim
 
 # from agent_rl.logging_utils import configure_training_logging
-from agent_rl.training_io import TrainingRunWriter, load_checkpoint, resolve_run_dir
+from agent_rl.training_io import (
+    TrainingRunWriter,
+    infer_source_run_dir,
+    load_checkpoint,
+    resolve_run_dir,
+)
 from agent_rl.diagnostics import DiagnosticsCollector, get_player_deck_counts
 
 
@@ -221,6 +226,7 @@ def train_buy_phase(
     output_dir   = config.get('output_dir')
     run_dir      = config.get('run_dir')
     resume_from  = config.get('resume_from')
+    continue_training = config.get('continue_training') or {}
     checkpoint_every = config.get('checkpoint_every', 10)
     latest_every = config.get('latest_every', 10)
     save_turns   = config.get('save_turns', True)
@@ -232,7 +238,35 @@ def train_buy_phase(
     # logger = configure_training_logging()
     repo_root = Path(__file__).resolve().parents[2]
     output_dir = Path(output_dir) if output_dir else (repo_root / "data" / "training")
-    run_dir = resolve_run_dir(output_dir, run_dir=run_dir, resume_from=resume_from)
+
+    continuation_enabled = bool(continue_training.get("enabled"))
+    continuation_checkpoint = continue_training.get("checkpoint_path")
+    continuation_run_dir = continue_training.get("run_dir")
+    continuation_output_dir = continue_training.get("output_dir")
+    inherit_optimizer_state = continue_training.get("inherit_optimizer_state", True)
+    inherit_epsilon_schedule = continue_training.get("inherit_epsilon_schedule", True)
+
+    if continuation_enabled:
+        if continuation_checkpoint is None:
+            raise ValueError("Continuation mode requires continue_training.checkpoint_path.")
+        if not Path(continuation_checkpoint).exists():
+            raise FileNotFoundError(f"Continuation checkpoint not found: {continuation_checkpoint}")
+        source_run_dir = infer_source_run_dir(continuation_checkpoint)
+        target_output_dir = Path(continuation_output_dir) if continuation_output_dir else output_dir
+        target_run_dir = Path(continuation_run_dir) if continuation_run_dir else None
+        run_dir = resolve_run_dir(
+            target_output_dir,
+            run_dir=target_run_dir,
+            force_new_run=True,
+        )
+        if source_run_dir is not None and run_dir.resolve() == source_run_dir.resolve():
+            raise ValueError(
+                "Continuation run_dir/output_dir resolves to the source run directory. "
+                "Choose a different target so the source run remains unchanged."
+            )
+    else:
+        run_dir = resolve_run_dir(output_dir, run_dir=run_dir, resume_from=resume_from)
+
     writer = TrainingRunWriter(run_dir)
     collector = DiagnosticsCollector(run_dir) if enable_diagnostics else None
     input_dim  = env.observation_space.shape[0]
@@ -249,10 +283,40 @@ def train_buy_phase(
 
     global_step = 0
     start_episode = 0
+    source_episode_base = 0
     start_time = time.time()
     progress = EpisodeProgress(episodes, start_time) if progress_bar else None
 
-    if resume_from:
+    if continuation_enabled:
+        payload = load_checkpoint(
+            continuation_checkpoint,
+            policy_net=policy_net,
+            target_net=target_net,
+            optimizer=opt if inherit_optimizer_state else None,
+            device=DEVICE,
+        )
+        if not inherit_optimizer_state:
+            target_state = payload.get("target_state", payload["policy_state"])
+            target_net.load_state_dict(target_state)
+        if inherit_epsilon_schedule:
+            epsilon = payload.get("epsilon", epsilon)
+            eps_decay = payload.get("eps_decay", eps_decay)
+        global_step = payload.get("global_step", global_step)
+        source_checkpoint_episode = payload.get("global_episode")
+        if source_checkpoint_episode is None:
+            source_checkpoint_episode = payload.get("episode", -1) + 1
+        source_episode_base = source_checkpoint_episode
+
+        writer.write_continuation_metadata({
+            "mode": "continue_training",
+            "source_checkpoint_path": str(Path(continuation_checkpoint).resolve()),
+            "source_run_dir": str(source_run_dir.resolve()) if source_run_dir is not None else None,
+            "source_checkpoint_episode": source_checkpoint_episode,
+            "source_global_step": global_step,
+            "inherit_optimizer_state": bool(inherit_optimizer_state),
+            "inherit_epsilon_schedule": bool(inherit_epsilon_schedule),
+        })
+    elif resume_from:
         payload = load_checkpoint(
             resume_from,
             policy_net=policy_net,
@@ -268,7 +332,9 @@ def train_buy_phase(
     total_episodes = max(0, episodes - start_episode)
     for ep in range(start_episode, episodes):
         # logger.info(f"\n=== Starting episode {ep:04d} ===")
-        episode_id = ep + 1
+        episode_id = (ep - start_episode) + 1 if continuation_enabled else ep + 1
+        source_episode = source_episode_base + episode_id if continuation_enabled else None
+        global_episode = source_episode if continuation_enabled else episode_id
         obs, _    = env.reset()
 
         # logger.info("card_names -> supply piles mapping:")
@@ -420,6 +486,8 @@ def train_buy_phase(
 
         writer.log_episode({
             "episode": episode_id,
+            "global_episode": global_episode,
+            "source_episode": "" if source_episode is None else source_episode,
             "steps": step_ctr,
             "reward": float(ep_reward),
             "score_diff": float(score_diff) if score_diff is not None else "",
@@ -428,7 +496,12 @@ def train_buy_phase(
         })
 
         if hasattr(env, "game") and hasattr(env.game, "players"):
-            writer.log_final_decks(episode_id, env.game.players)
+            writer.log_final_decks(
+                episode_id,
+                env.game.players,
+                global_episode=global_episode,
+                source_episode=source_episode,
+            )
 
         turn_events = env.consume_turn_events()
 
@@ -467,6 +540,9 @@ def train_buy_phase(
         if should_save_latest or should_save_checkpoint:
             payload = {
                 "episode": ep,
+                "local_episode": episode_id,
+                "global_episode": global_episode,
+                "source_episode": source_episode,
                 "global_step": global_step,
                 "epsilon": epsilon,
                 "eps_decay": eps_decay,
@@ -480,7 +556,12 @@ def train_buy_phase(
 
         if should_save_checkpoint:
             ckpt_path = writer.save_checkpoint(payload, f"checkpoint_ep_{episode_id:06d}")
-            writer.log_weights_checkpoint(episode_id, ckpt_path)
+            writer.log_weights_checkpoint(
+                episode_id,
+                ckpt_path,
+                global_episode=global_episode,
+                source_episode=source_episode,
+            )
 
         if progress:
             progress.update(episode_id)

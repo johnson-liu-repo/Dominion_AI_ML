@@ -47,6 +47,10 @@ def _resolve_resume_from(value: str | None) -> Path | None:
     return candidate if candidate.is_absolute() else repo_root / candidate
 
 
+def _resolve_optional_path(value: str | None) -> Path | None:
+    return _resolve_resume_from(value)
+
+
 def _build_opponents(bot_names: list[str]) -> list:
     opponents = []
     for bot_name in bot_names:
@@ -83,6 +87,22 @@ def load_training_configuration(config_path: Path) -> dict:
     )()
 
     training = raw.get("training", {})
+    continue_training_raw = raw.get("continue_training", {}) or {}
+    continue_training_enabled = bool(continue_training_raw.get("enabled", False))
+    continue_checkpoint = _resolve_optional_path(continue_training_raw.get("checkpoint_path"))
+    continue_output_dir = _resolve_optional_path(continue_training_raw.get("output_dir"))
+    continue_run_dir = _resolve_optional_path(continue_training_raw.get("run_dir"))
+
+    if continue_training_enabled:
+        if continue_checkpoint is None:
+            raise ValueError(
+                "continue_training.enabled is true, but continue_training.checkpoint_path is missing."
+            )
+        if continue_output_dir is not None and continue_run_dir is not None:
+            raise ValueError(
+                "continue_training.output_dir and continue_training.run_dir are mutually exclusive."
+            )
+
     return {
         "env": phase_env,
         "episodes": training.get("episodes", 10),
@@ -94,12 +114,22 @@ def load_training_configuration(config_path: Path) -> dict:
         "eps_min": training.get("eps_min", 0.05),
         "target_update": training.get("target_update", 1000),
         "resume_from": _resolve_resume_from(raw.get("resume_from")),
+        "output_dir": _resolve_optional_path(raw.get("output_dir")),
+        "run_dir": _resolve_optional_path(raw.get("run_dir")),
         "checkpoint_every": training.get("checkpoint_every", 200),
         "latest_every": training.get("latest_every", 1),
         "save_turns": training.get("save_turns", True),
         "save_turns_every": training.get("save_turns_every", 1),
         "progress_bar": training.get("progress_bar", True),
         "enable_diagnostics": training.get("enable_diagnostics", False),
+        "continue_training": {
+            "enabled": continue_training_enabled,
+            "checkpoint_path": continue_checkpoint,
+            "output_dir": continue_output_dir,
+            "run_dir": continue_run_dir,
+            "inherit_optimizer_state": continue_training_raw.get("inherit_optimizer_state", True),
+            "inherit_epsilon_schedule": continue_training_raw.get("inherit_epsilon_schedule", True),
+        },
     }
 
 

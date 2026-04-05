@@ -6,17 +6,17 @@
   ],
   "output_dir": null,
   "run_dir": null,
-  "resume_from": null,
+  "resume_from": "data/training/training_011/checkpoints/checkpoint_latest.pt",
   "continue_training": {
-    "enabled": true,
-    "checkpoint_path": "data/training/training_011/checkpoints/checkpoint_latest.pt",
-    "output_dir": "data/training",
+    "enabled": false,
+    "checkpoint_path": null,
+    "output_dir": null,
     "run_dir": null,
     "inherit_optimizer_state": true,
     "inherit_epsilon_schedule": true
   },
   "training": {
-    "episodes": 100,
+    "episodes": 7000,
     "turn_limit": 250,
     "batch_size": 64,
     "gamma": 0.99,

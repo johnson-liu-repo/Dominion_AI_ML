@@ -5,11 +5,73 @@ Usage:
 """
 
 import argparse
+import csv
 import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+repo_root = Path(__file__).resolve().parents[1]
+sys.path.append(str(repo_root))
+sys.path.append(str(repo_root / "src"))
+
+from agent_rl.diagnostics import BUY_DECISION_HEADER, EPISODE_SUMMARY_HEADER, ROLLING_HEADER
+
+LEGACY_EPISODE_SUMMARY_HEADER = [
+    "episode", "winner", "did_rl_agent_win",
+    "final_score_rl", "final_score_opponent", "final_score_diff",
+    "episode_reward_total", "episode_length_turns",
+    "mean_buy_phase_coins_rl", "max_buy_phase_coins_rl", "num_buy_phases_rl",
+    "count_buy_phase_coins_ge_3_rl", "count_buy_phase_coins_ge_5_rl",
+    "count_buy_phase_coins_ge_6_rl", "count_buy_phase_coins_ge_8_rl",
+    "afford_copper_count_rl", "afford_silver_count_rl", "afford_gold_count_rl",
+    "afford_estate_count_rl", "afford_duchy_count_rl", "afford_province_count_rl",
+    "afford_curse_count_rl",
+    "buy_copper_count_rl", "buy_silver_count_rl", "buy_gold_count_rl",
+    "buy_estate_count_rl", "buy_duchy_count_rl", "buy_province_count_rl",
+    "buy_curse_count_rl", "buy_none_count_rl",
+    "buy_gold_when_affordable_count_rl", "buy_province_when_affordable_count_rl",
+    "buy_duchy_when_province_affordable_count_rl", "buy_silver_when_gold_affordable_count_rl",
+    "buy_silver_when_province_affordable_count_rl", "buy_estate_when_duchy_affordable_count_rl",
+    "first_turn_reach_5_coins_rl", "first_turn_reach_6_coins_rl", "first_turn_reach_8_coins_rl",
+    "first_turn_buy_gold_rl", "first_turn_buy_province_rl", "first_turn_buy_duchy_rl",
+    "final_count_copper_rl", "final_count_silver_rl", "final_count_gold_rl",
+    "final_count_estate_rl", "final_count_duchy_rl", "final_count_province_rl",
+    "final_count_curse_rl", "final_deck_size_rl",
+    "mean_buy_phase_coins_opp",
+    "final_count_copper_opp", "final_count_silver_opp", "final_count_gold_opp",
+    "final_count_estate_opp", "final_count_duchy_opp", "final_count_province_opp",
+    "final_deck_size_opp",
+]
+
+LEGACY_ROLLING_HEADER = [
+    "episode",
+    "rolling_win_rate", "rolling_mean_score_diff", "rolling_mean_episode_reward",
+    "rolling_mean_buy_phase_coins_rl",
+    "rolling_afford_gold_rate_rl", "rolling_afford_province_rate_rl",
+    "rolling_buy_gold_rate_rl", "rolling_buy_province_rate_rl",
+    "rolling_buy_gold_given_affordable_rl",
+    "rolling_buy_province_given_affordable_rl",
+    "rolling_buy_silver_given_gold_affordable_rl",
+    "rolling_buy_silver_given_province_affordable_rl",
+    "rolling_first_turn_reach_8_mean_rl",
+    "rolling_first_turn_buy_province_mean_rl",
+]
+
+LEGACY_BUY_DECISION_HEADER = [
+    "episode", "turn_index", "buy_decision_index",
+    "coins_available", "buys_available",
+    "score_rl_current", "score_opp_current", "score_diff_current",
+    "provinces_remaining", "duchies_remaining", "estates_remaining",
+    "total_deck_size_rl_current",
+    "affordable_cards", "chosen_action", "chosen_card",
+    "was_gold_affordable", "was_province_affordable", "was_duchy_affordable",
+    "was_silver_affordable", "was_curse_affordable",
+    "bought_gold", "bought_province", "bought_duchy", "bought_silver",
+    "bought_estate", "bought_copper", "bought_curse", "bought_none",
+    "epsilon", "q_value_chosen", "top_k_actions_with_q_values",
+]
 
 
 def pct(num, den):
@@ -50,17 +112,62 @@ def add_metric(lines, label, value):
     lines.append(f"  {label:<34} {value}")
 
 
+def load_mixed_schema_csv(path: Path, canonical_header, legacy_headers) -> pd.DataFrame:
+    """Load a diagnostics CSV while tolerating mixed legacy/current row schemas."""
+    with path.open("r", newline="", encoding="utf-8") as f:
+        reader = csv.reader(f)
+        try:
+            observed_header = next(reader)
+        except StopIteration:
+            return pd.DataFrame(columns=canonical_header)
+
+        known_headers = {len(canonical_header): canonical_header}
+        for legacy_header in legacy_headers:
+            known_headers[len(legacy_header)] = legacy_header
+        known_headers[len(observed_header)] = observed_header
+
+        rows = []
+        for row in reader:
+            if not row:
+                continue
+
+            source_header = known_headers.get(len(row))
+            if source_header is None:
+                source_header = observed_header if len(row) < len(canonical_header) else canonical_header
+
+            row_dict = {column: value for column, value in zip(source_header, row)}
+            rows.append({column: row_dict.get(column, "") for column in canonical_header})
+
+    return pd.DataFrame(rows, columns=canonical_header)
+
+
+def load_episode_summary(path: Path) -> pd.DataFrame:
+    return load_mixed_schema_csv(path, EPISODE_SUMMARY_HEADER, [LEGACY_EPISODE_SUMMARY_HEADER])
+
+
+def load_rolling_metrics(path: Path) -> pd.DataFrame:
+    if not path.exists():
+        return pd.DataFrame(columns=ROLLING_HEADER)
+    return load_mixed_schema_csv(path, ROLLING_HEADER, [LEGACY_ROLLING_HEADER])
+
+
+def load_buy_decisions(path: Path):
+    if not path.exists() or path.stat().st_size <= 100:
+        return None
+    return load_mixed_schema_csv(path, BUY_DECISION_HEADER, [LEGACY_BUY_DECISION_HEADER])
+
+
 def generate_report(diag_dir: Path) -> str:
-    episode = pd.read_csv(diag_dir / "episode_summary.csv")
+    episode = load_episode_summary(diag_dir / "episode_summary.csv")
 
     rolling_path = diag_dir / "rolling_metrics.csv"
-    rolling = pd.read_csv(rolling_path) if rolling_path.exists() else pd.DataFrame()
+    rolling = load_rolling_metrics(rolling_path)
 
     bucket_path = diag_dir / "coin_bucket_summary.csv"
     bucket = pd.read_csv(bucket_path) if bucket_path.exists() else None
 
     buy_path = diag_dir / "buy_decisions.csv"
-    buy = pd.read_csv(buy_path) if buy_path.exists() and buy_path.stat().st_size > 100 else None
+    buy = load_buy_decisions(buy_path)
 
     n = len(episode)
     lines = []

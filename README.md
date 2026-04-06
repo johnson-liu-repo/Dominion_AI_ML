@@ -367,6 +367,23 @@ Create a framework to train reinforcement learning agents to play Dominion.
 
 This section provides a deeper technical breakdown of the DQN implementation used in `src/agent_rl/train_dqn.py` and how it interacts with the buy-phase environment.
 
+### DQN Structure (at a glance)
+
+The implemented network is a **dueling DQN** with one shared MLP trunk and two output heads:
+
+| Stage | Layer | Output shape (single sample) | Purpose |
+|---|---|---|---|
+| Input | Observation vector | `(4K + 6,)` | Encodes supply, hand, deck zones, opponent zones, and scalar turn/economy features |
+| Normalize | `LayerNorm(input_dim)` | `(4K + 6,)` | Stabilizes feature scales across heterogeneous numeric inputs |
+| Trunk-1 | `Linear(input_dim, 256)` + ReLU | `(256,)` | First shared representation layer |
+| Trunk-2 | `Linear(256, 256)` + ReLU | `(256,)` | Higher-capacity shared feature extraction |
+| Trunk-3 | `Linear(256, 128)` + ReLU | `(128,)` | Compressed latent state representation |
+| Value stream | `Linear(128,128)` + ReLU + `Linear(128,1)` | `(1,)` | Estimates scalar state value `V(s)` |
+| Advantage stream | `Linear(128,128)` + ReLU + `Linear(128,K+1)` | `(K+1,)` | Estimates per-action advantages `A(s,a)` |
+| Aggregation | `Q = V + (A - mean(A))` | `(K+1,)` | Produces final Q-values over all buy actions + pass |
+
+In other words, for each observation, the network outputs one Q-value per action slot in the fixed action space (`K` cards + pass). Illegal actions are then masked out before greedy action selection and before next-state argmax in Double DQN target computation.
+
 ### 1) Learning Setup: What the Agent Actually Learns
 
 The current agent learns a **buy-phase policy** only. At each environment step, it chooses one discrete action from:

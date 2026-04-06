@@ -360,3 +360,230 @@ Create a framework to train reinforcement learning agents to play Dominion.
 - Extend to multi-phase agents (action + buy decision-making)
 - Compare shared vs. separate models for multi-phase learning
 - Evaluate agent performance using custom metrics and comparisons to human-style strategies
+
+---
+
+## Detailed DQN Structure Overview (Comprehensive)
+
+This section provides a deeper technical breakdown of the DQN implementation used in `src/agent_rl/train_dqn.py` and how it interacts with the buy-phase environment.
+
+### 1) Learning Setup: What the Agent Actually Learns
+
+The current agent learns a **buy-phase policy** only. At each environment step, it chooses one discrete action from:
+
+- `0..K-1`: buy one of the `K` tracked cards in `card_names`
+- `K`: pass (buy nothing)
+
+The action dimension is therefore `K + 1`.
+
+Formally, the network approximates:
+
+\[
+Q_\theta(s, a) \approx \mathbb{E}\left[\sum_{t=0}^{\infty} \gamma^t r_{t+1} \mid s_0=s, a_0=a\right]
+\]
+
+where the transition dynamics are induced by full Dominion turn progression (agent buy + cleanup + opponent turns + next agent turn).
+
+---
+
+### 2) State (Observation) Structure
+
+The environment observation is a flat vector with shape:
+
+\[
+\text{obs\_dim} = 4K + 6
+\]
+
+concatenating:
+
+1. **Supply counts** (`K`): remaining cards per supply pile
+2. **Agent hand counts** (`K`): card histogram for current hand
+3. **Agent zone counts** (`K`): deck + hand + discard histogram
+4. **Opponent zone counts** (`K`): single-opponent deck + hand + discard histogram (zeros when unavailable)
+5. **Scalar features** (`6`):
+   - actions remaining
+   - buys remaining
+   - money available
+   - turn index
+   - current score difference (agent minus best opponent)
+   - total owned cards in agent zones
+
+This representation mixes **economy state**, **deck composition**, **supply depletion**, and **game progression** in one vector suitable for MLP processing.
+
+---
+
+### 3) Action-Space Constraints via Legal Masking
+
+Although the action space is fixed-size, Dominion legality changes by state. The implementation constructs a binary mask each step:
+
+- action is legal if pile exists, pile non-empty, cost ≤ current money, and buys > 0
+- pass action is always legal
+
+Masking is used in two places:
+
+1. **Behavior policy** (selection): illegal actions are forced to very negative Q before argmax
+2. **Bootstrap target** (Double DQN): next-state argmax is computed only over legal actions
+
+This is critical: it prevents the learner from exploiting impossible actions and reduces overestimation artifacts from invalid max operations.
+
+---
+
+### 4) Network Architecture: Dueling DQN MLP
+
+The model class is `DuelingDQN`, with a shared trunk plus value/advantage heads.
+
+#### Shared trunk
+
+- `LayerNorm(input_dim)`
+- `Linear(input_dim, 256)` + ReLU
+- `Linear(256, 256)` + ReLU
+- `Linear(256, 128)` + ReLU
+
+#### Heads
+
+- **Value head**: `128 -> 128 -> 1`
+- **Advantage head**: `128 -> 128 -> (K+1)`
+
+Combined as:
+
+\[
+Q(s,a)=V(s) + \left(A(s,a) - \frac{1}{|\mathcal{A}|}\sum_{a'}A(s,a')\right)
+\]
+
+This dueling factorization helps when many actions have similar effects by allowing the network to separately model:
+
+- overall state quality (`V(s)`)
+- relative preference among actions (`A(s,a)`)
+
+LayerNorm at input stabilizes training under heterogeneous feature scales (supply counts, score deltas, money, turn index, etc.).
+
+---
+
+### 5) Exploration Strategy
+
+The policy is **epsilon-greedy** with multiplicative decay:
+
+- Start: `epsilon` (default 1.0)
+- Per step update: `epsilon <- max(eps_min, epsilon * eps_decay)`
+- Floor: `eps_min` (default 0.05)
+
+When exploring, a random action is sampled **only from legal actions**. This keeps exploration realistic and avoids wasting transitions on impossible moves.
+
+---
+
+### 6) Replay Buffer and Off-Policy Learning
+
+Transitions are stored in a uniform replay buffer (`deque`), each tuple containing:
+
+\[
+(s_t, a_t, r_t, s_{t+1}, done_t, mask_{t+1})
+\]
+
+where `mask_{t+1}` is explicitly persisted so target computation can respect future legality at train time.
+
+Training starts once replay size reaches `batch_size`, then each update samples a random minibatch to reduce temporal correlation and improve sample efficiency.
+
+---
+
+### 7) Target Computation: Double DQN with Masked Argmax
+
+For each sampled transition, the training code computes:
+
+1. **Current estimate**
+\[
+Q_\theta(s_t,a_t)
+\]
+
+2. **Action selection network** (online net, masked legality)
+\[
+a^* = \arg\max_a Q_\theta(s_{t+1},a)\quad\text{with illegal actions excluded}
+\]
+
+3. **Action evaluation network** (target net)
+\[
+V_{t+1}=Q_{\bar\theta}(s_{t+1},a^*)
+\]
+
+4. **Bootstrapped target**
+\[
+y_t = r_t + \gamma(1-d_t)V_{t+1}
+\]
+
+5. **Loss**
+\[
+\mathcal{L}=\text{MSE}\left(Q_\theta(s_t,a_t), y_t\right)
+\]
+
+This is Double DQN because argmax uses the online network while value extraction uses the target network.
+
+---
+
+### 8) Optimization and Stability Mechanisms
+
+- Optimizer: **Adam** (`lr=1e-3`)
+- Loss: **MSELoss**
+- Gradient step: one update per environment step after warmup threshold
+- Target sync: hard copy `policy_net -> target_net` every `target_update` global steps
+- Device: CUDA if available, else CPU
+
+The hard-sync target network reduces moving-target instability during bootstrapped learning.
+
+---
+
+### 9) Reward Composition and Learning Signal
+
+The step reward in the buy-phase environment is shaped from multiple terms:
+
+- Illegal action penalty
+- Pass penalty (small negative)
+- Card-type-dependent shaping (curse/victory/treasure effects)
+- Deck dilution penalty based on owned-card count
+- Terminal/game-end score-based adjustments
+- End-of-episode score differential augmentation in trainer
+
+This produces a dense training signal intended to accelerate learning of economically coherent purchase behavior, while still tying outcomes to final Dominion scoring dynamics.
+
+---
+
+### 10) Temporal Granularity and Credit Assignment
+
+One RL `step` corresponds to **one agent buy decision**, but the environment transition spans:
+
+1. agent buy
+2. cleanup/end-turn
+3. full opponent turns
+4. start of next agent buy phase
+
+Therefore the MDP is effectively semi-aggregated at decision points. The Q-function must learn long-horizon consequences of buy choices through intervening opponent and draw dynamics.
+
+---
+
+### 11) Logging, Checkpointing, and Diagnostics Integration
+
+The DQN loop is tightly integrated with run artifact tooling:
+
+- episode metrics CSV logging
+- turn-event JSONL persistence
+- periodic/latest checkpoint snapshots (`policy`, `target`, optimizer, epsilon, step counters)
+- optional diagnostics:
+  - buy decisions + chosen Q values
+  - top-k legal Q candidates
+  - training-step loss / TD-error traces
+  - episode summary and rolling metrics
+
+This makes the implementation useful not only for training, but for **policy-behavior analysis** and debugging failure modes (e.g., over-passing, greening too early, low-economy traps).
+
+---
+
+### 12) Why This DQN Design Fits the Current Project Stage
+
+The current design is a pragmatic baseline for Dominion buy-phase RL because it combines:
+
+- simple vector observations (fast experimentation)
+- legal-action masking (domain correctness)
+- dueling architecture (better action discrimination)
+- Double DQN targets (reduced overestimation)
+- replay + target net (standard deep RL stability toolkit)
+- rich artifact logging (analysis-first workflow)
+
+In short, it is not yet the final architecture for full Dominion mastery, but it is a strong and extensible baseline for iterative research on buy-phase policy quality, reward shaping, and deck-building dynamics.

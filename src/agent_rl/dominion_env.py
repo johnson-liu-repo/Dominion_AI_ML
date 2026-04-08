@@ -22,18 +22,47 @@ class DominionBuyPhaseEnv(gym.Env):
 
     def __init__(self, game, player_bot, card_names, opponent_bots=None):
         super().__init__()
-        self.game        = game
-        self.bot         = player_bot          # convenience alias
+        self.game          = game
+        self.bot           = player_bot          # convenience alias
         self.opponent_bots = list(opponent_bots) if opponent_bots else []
-        self.card_names  = card_names          # ordered list of |K| kingdom cards
-        self.pass_idx    = len(card_names)     # final index is "pass / buy nothing"
+        self.card_names    = card_names          # Ordered list of card types encoded in
+                                                 # the action/observation vectors.
+                                                 # (In current training this includes
+                                                 # base treasure, victory, curse,
+                                                 # and action card names, not just
+                                                 # kingdom cards.)
+        self.pass_idx      = len(card_names)     # final index is "pass / buy nothing"
 
         n = len(card_names)
         self.action_space = spaces.Discrete(n + 1)                  # 0..n  (n==pass)
         self.observation_space = spaces.Box(
             low=-100,
             high=100,
-            shape=(4 * n + 6,),  # supply + hand + own cards + opp cards + scalars
+            shape=(4 * n + 6,),  # n is len(card_names), meaning the number of
+                                 # card types represented in the action and
+                                 # observation encoding. In the current setup,
+                                 # card_names includes base treasure, victory,
+                                 # curse, and action card names, even though
+                                 # only some of those piles may actually be
+                                 # present in the match supply.
+                                 #
+                                 # The observation contains four n-length
+                                 # card-count blocks:
+                                 # 1. The number of cards remaining in each
+                                 #    supply pile.
+                                 # 2. The number of each card type in the
+                                 #    agent's current hand.
+                                 # 3. The number of each card type in the
+                                 #    agent's deck/hand/discard zones.
+                                 # 4. The number of each card type in the
+                                 #    opponent's deck/hand/discard zones.
+                                 #
+                                 # It then appends 6 scalar values:
+                                 # the agent's remaining actions, remaining
+                                 # buys, available money, current turn number,
+                                 # current score difference versus the best
+                                 # opponent, and the total number of cards in
+                                 # the agent's deck/hand/discard zones.
             dtype=np.float32,
         )
 

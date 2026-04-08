@@ -507,29 +507,24 @@ Training starts once replay size reaches `batch_size`, then each update samples 
 For each sampled transition, the training code computes:
 
 1. **Current estimate**
-\[
-Q_\theta(s_t,a_t)
-\]
+
+$Q_\theta(s_t,a_t)$
 
 2. **Action selection network** (online net, masked legality)
-\[
-a^* = \arg\max_a Q_\theta(s_{t+1},a)\quad\text{with illegal actions excluded}
-\]
+
+$a^* = \arg\max_a Q_\theta(s_{t+1},a)\quad\text{with illegal actions excluded}$
 
 3. **Action evaluation network** (target net)
-\[
-V_{t+1}=Q_{\bar\theta}(s_{t+1},a^*)
-\]
+
+$V_{t+1}=Q_{\bar\theta}(s_{t+1},a^*)$
 
 4. **Bootstrapped target**
-\[
-y_t = r_t + \gamma(1-d_t)V_{t+1}
-\]
+
+$y_t = r_t + \gamma(1-d_t)V_{t+1}$
 
 5. **Loss**
-\[
-\mathcal{L}=\text{MSE}\left(Q_\theta(s_t,a_t), y_t\right)
-\]
+
+$\mathcal{L}=\text{MSE}\left(Q_\theta(s_t,a_t), y_t\right)$
 
 This is Double DQN because argmax uses the online network while value extraction uses the target network.
 

@@ -25,6 +25,11 @@ def make_env(cards_used_in_game, seed=None, opponent_bots=None):
 
         bot1 = DummieBot("RL_Agent")
         opponents = list(opponent_bots) if opponent_bots else []
+        if len(opponents) != 1:
+            raise ValueError(
+                "make_env currently supports exactly one scripted opponent "
+                "(2-player games only)."
+            )
 
         selected_expansions = [base.curriculum_basic] # <--- adjust curriculum cards here
         players = [bot1] + opponents

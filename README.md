@@ -150,7 +150,7 @@ ANALYSIS PIPELINE (post-training):
 | **Module** | **Key Classes/Functions** | **Purpose** | **Depends On** | **Used By** |
 |---|---|---|---|---|
 | **dominion_env.py** | `DominionBuyPhaseEnv` (class) | Wraps Pyminion Game as Gymnasium environment; exposes buy-phase decisions; internally runs action/treasure/cleanup phases | `pyminion.Game`, `numpy`, `gymnasium` | `dominion_env_factory.make_env()`, `train_dqn.train_buy_phase()` |
-| **dominion_env_factory.py** | `make_env(cards, seed, opponent)` | Factory function; creates seeded environments with configurable card sets and scripted opponents | `DominionBuyPhaseEnv`, `DummieBot`, `pyminion` | `train_agent.py` (config entry point) |
+| **dominion_env_factory.py** | `make_env(cards, seed, opponent)` | Factory function; creates seeded 2-player environments with configurable card sets and one scripted opponent | `DominionBuyPhaseEnv`, `DummieBot`, `pyminion` | `train_agent.py` (config entry point) |
 | **train_dqn.py** | `train_buy_phase(config)` | Main DQN training loop; epsilon-greedy exploration, replay buffer, target network syncs, action masking | `torch`, `training_io.TrainingRunWriter`, environment from `make_env()` | `train_agent.py` |
 | **dummie_bot.py** | `DummieBot` (class) | Simple baseline bot with hardcoded buy priority (Province > Duchy > Estate); implements `pyminion.bots.Bot` interface | `pyminion.bots.Bot`, `pyminion.expansions.base` | `dominion_env_factory.make_env()` (as RL agent) |
 | **training_io.py** | `TrainingRunWriter` (class) | Serializes training artifacts; saves checkpoints (.pt), episode metrics (CSV), turn events (JSONL), manages data/training/run_XXX/ structure | `pathlib`, `torch`, `json`, `csv` | `train_dqn.train_buy_phase()` |
@@ -416,13 +416,13 @@ concatenating:
 1. **Supply counts** (`K`): remaining cards per supply pile
 2. **Agent hand counts** (`K`): card histogram for current hand
 3. **Agent zone counts** (`K`): deck + hand + discard histogram
-4. **Opponent zone counts** (`K`): single-opponent deck + hand + discard histogram (zeros when unavailable)
+4. **Opponent zone counts** (`K`): single-opponent deck + hand + discard histogram
 5. **Scalar features** (`6`):
    - actions remaining
    - buys remaining
    - money available
    - turn index
-   - current score difference (agent minus best opponent)
+   - current score difference (agent minus opponent)
    - total owned cards in agent zones
 
 This representation mixes **economy state**, **deck composition**, **supply depletion**, and **game progression** in one vector suitable for MLP processing.

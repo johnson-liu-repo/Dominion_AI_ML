@@ -52,6 +52,11 @@ def _resolve_optional_path(value: str | None) -> Path | None:
 
 
 def _build_opponents(bot_names: list[str]) -> list:
+    if len(bot_names) != 1:
+        raise ValueError(
+            "Training currently supports exactly one opponent bot "
+            "(2-player games only)."
+        )
     opponents = []
     for bot_name in bot_names:
         factory = BOT_FACTORIES.get(bot_name)

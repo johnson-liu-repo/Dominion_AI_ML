@@ -234,6 +234,13 @@ def train_buy_phase(
     progress_bar = config.get('progress_bar', True)
     enable_diagnostics = config.get('enable_diagnostics', False)
 
+    if len(getattr(env, "opponent_bots", [])) != 1:
+        raise ValueError(
+            "train_buy_phase currently supports exactly one opponent bot "
+            "(2-player games only)."
+        )
+    opponent = env.opponent_bots[0]
+
 
     # logger = configure_training_logging()
     repo_root = Path(__file__).resolve().parents[2]
@@ -466,18 +473,15 @@ def train_buy_phase(
         # --------------- episode end  -----------------
         RL_agent_score = env.bot.get_victory_points()
 
-        opponents = [bot for bot in env.opponent_bots if bot != env.bot]
-        opponent_scores = [opp.get_victory_points() for opp in opponents]
+        opponent_score = opponent.get_victory_points()
 
         # logger.info("\n\n--- Episode Summary ---")
 
         # logger.info(f"RL agent score: {RL_agent_score}")
-        # logger.info("Opponent scores:")
-        # for i, opp_score in enumerate(opponent_scores):
-            # logger.info(f"  {opponents[i].player_id}: {opp_score}")
+        # logger.info(f"Opponent score: {opponent_score}")
 
-        score_diff = np.average([RL_agent_score - opp_score for opp_score in opponent_scores]) if opponent_scores else None
-        ep_reward += score_diff if score_diff is not None else 0.0
+        score_diff = RL_agent_score - opponent_score
+        ep_reward += score_diff
 
         # if score_diff is not None:
             # logger.info(f"Ep {ep:04d} | steps={step_ctr:3d} | epsilon={epsilon:.3f} | reward={ep_reward:.3f} | score_diff={score_diff:.1f}")
@@ -490,7 +494,7 @@ def train_buy_phase(
             "source_episode": "" if source_episode is None else source_episode,
             "steps": step_ctr,
             "reward": float(ep_reward),
-            "score_diff": float(score_diff) if score_diff is not None else "",
+            "score_diff": float(score_diff),
             "epsilon": float(epsilon),
             "timestamp": time.time(),
         })
@@ -508,15 +512,14 @@ def train_buy_phase(
         if collector:
             rl_deck = get_player_deck_counts(env.bot)
             opp_deck = {}
-            if opponents:
-                opp_deck = get_player_deck_counts(opponents[0])
+            if opponent:
+                opp_deck = get_player_deck_counts(opponent)
             winners = env.game.get_winners() if hasattr(env, "game") else []
             did_win = env.bot in winners
-            best_opp_score = max(opponent_scores) if opponent_scores else 0
             collector.finalize_episode(
                 did_win=did_win,
                 rl_score=RL_agent_score,
-                opp_score=best_opp_score,
+                opp_score=opponent_score,
                 ep_reward=ep_reward,
                 ep_length=step_ctr,
                 rl_deck_counts=rl_deck,

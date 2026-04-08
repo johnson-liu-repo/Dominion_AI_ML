@@ -25,6 +25,22 @@ class DominionBuyPhaseEnv(gym.Env):
         self.game          = game
         self.bot           = player_bot          # convenience alias
         self.opponent_bots = list(opponent_bots) if opponent_bots else []
+        if len(self.opponent_bots) != 1:
+            raise ValueError(
+                "DominionBuyPhaseEnv currently supports exactly one opponent bot "
+                "(2-player games only)."
+            )
+        self.opponent = self.opponent_bots[0]
+        if len(getattr(self.game, "players", [])) != 2:
+            raise ValueError(
+                "DominionBuyPhaseEnv requires game.players to contain exactly "
+                "two players: the RL agent and one opponent."
+            )
+        if self.bot not in self.game.players or self.opponent not in self.game.players:
+            raise ValueError(
+                "DominionBuyPhaseEnv requires both the RL agent and the "
+                "configured opponent to be present in game.players."
+            )
         self.card_names    = card_names          # Ordered list of card types encoded in
                                                  # the action/observation vectors.
                                                  # (In current training this includes
@@ -38,31 +54,55 @@ class DominionBuyPhaseEnv(gym.Env):
         self.observation_space = spaces.Box(
             low=-100,
             high=100,
-            shape=(4 * n + 6,),  # n is len(card_names), meaning the number of
+            shape=(4 * n + 6,),  #######################################################
+                                 # n is len(card_names), meaning the number of
                                  # card types represented in the action and
                                  # observation encoding. In the current setup,
                                  # card_names includes base treasure, victory,
                                  # curse, and action card names, even though
                                  # only some of those piles may actually be
                                  # present in the match supply.
-                                 #
-                                 # The observation contains four n-length
-                                 # card-count blocks:
-                                 # 1. The number of cards remaining in each
-                                 #    supply pile.
-                                 # 2. The number of each card type in the
-                                 #    agent's current hand.
-                                 # 3. The number of each card type in the
-                                 #    agent's deck/hand/discard zones.
-                                 # 4. The number of each card type in the
-                                 #    opponent's deck/hand/discard zones.
-                                 #
-                                 # It then appends 6 scalar values:
-                                 # the agent's remaining actions, remaining
-                                 # buys, available money, current turn number,
-                                 # current score difference versus the best
-                                 # opponent, and the total number of cards in
-                                 # the agent's deck/hand/discard zones.
+                                 ########################################################
+                                 # 4 n-length card-count vectors:
+                                 # ======================================================
+                                 # 1.  The number of cards remaining in each
+                                 #     supply pile.
+                                 #     --------------------------------------------------
+                                 #     An n-vector where each element corresponds to
+                                 #     the count of cards left in that supply pile.
+                                 # ======================================================
+                                 # 2.  The number of each card type in the
+                                 #     agent's current hand.
+                                 #     --------------------------------------------------
+                                 #     An n-vector where each element corresponds to
+                                 #     the count of that card type in the agent's hand.
+                                 # ======================================================
+                                 # 3.  The number of each card type in the
+                                 #     agent's deck/hand/discard zones.
+                                 #     --------------------------------------------------
+                                 #     An n-vector where each element corresponds to
+                                 #     the count of that card that the agent currently 
+                                 #     owns across their deck, hand, and discard pile.
+                                 # ======================================================
+                                 # 4.  The number of each card type in the
+                                 #     single opponent's deck/hand/discard
+                                 #     zones.
+                                 #     --------------------------------------------------
+                                 #     An n-vector where each element corresponds to 
+                                 #     the count of that card that the opponent
+                                 #     currently owns across their deck, hand,
+                                 #     and discard pile.
+                                 # ======================================================
+                                 # 6 scalar values:
+                                 # ======================================================
+                                 # 5.  The agent's remaining actions.
+                                 # 6.  The agent's remaining buys.
+                                 # 7.  The agent's available money.
+                                 # 8.  The current turn number.
+                                 # 9.  The current score difference versus the
+                                 #     opponent.
+                                 # 10. The total number of cards in the agent's 
+                                 #     deck/hand/discard zones.
             dtype=np.float32,
         )
 
@@ -131,39 +171,36 @@ class DominionBuyPhaseEnv(gym.Env):
         self.game.current_phase = self.game.Phase.Buy
 
     def _play_opponents(self):
-        """Play full turns for all opponents before the next agent turn."""
-        for opponent in self.game.get_opponents(self.bot):
-            hand_snapshot = [card.name for card in opponent.hand.cards]
-            # logger.info(f"Hand ({opponent.player_id}): {opponent.hand}")
-            self.game.current_player = opponent
-            self.game.play_turn(opponent)
-            buys = [
-                card for phase, card in opponent.last_turn_gains
-                if phase == self.game.Phase.Buy
-            ]
-            # if buys:
-                # for card in buys:
-                    # logger.info(
-                        # f"Buy phase: {opponent.player_id} bought {card} (turn {self._turn})"
-                    # )
-            # else:
-                # logger.info(f"Buy phase: {opponent.player_id} passed (turn {self._turn})")
-            buy_names = [card.name for card in buys] if buys else ["PASS"]
-            self._record_turn_event(opponent, hand_snapshot, buy_names, self._turn)
-            if self.game.is_over():
-                return
+        """Play the single opponent turn before the next agent turn."""
+        opponent = self.opponent
+        hand_snapshot = [card.name for card in opponent.hand.cards]
+        # logger.info(f"Hand ({opponent.player_id}): {opponent.hand}")
+        self.game.current_player = opponent
+        self.game.play_turn(opponent)
+        buys = [
+            card for phase, card in opponent.last_turn_gains
+            if phase == self.game.Phase.Buy
+        ]
+        # if buys:
+            # for card in buys:
+                # logger.info(
+                    # f"Buy phase: {opponent.player_id} bought {card} (turn {self._turn})"
+                # )
+        # else:
+            # logger.info(f"Buy phase: {opponent.player_id} passed (turn {self._turn})")
+        buy_names = [card.name for card in buys] if buys else ["PASS"]
+        self._record_turn_event(opponent, hand_snapshot, buy_names, self._turn)
 
     def _terminal_info(self):
         """Compute terminal win/loss metadata for logging and reward shaping."""
         agent_score = self.bot.get_victory_points()
-        opponent_scores = [p.get_victory_points() for p in self.game.get_opponents(self.bot)]
-        best_opp = max(opponent_scores) if opponent_scores else 0
-        score_diff = agent_score - best_opp
+        opponent_score = self.opponent.get_victory_points()
+        score_diff = agent_score - opponent_score
         winners = self.game.get_winners()
         return {
             "won": self.bot in winners,
             "agent_score": agent_score,
-            "best_opp_score": best_opp,
+            "opponent_score": opponent_score,
             "score_diff": score_diff,
         }
 
@@ -186,17 +223,14 @@ class DominionBuyPhaseEnv(gym.Env):
             supply_remaining[name] = len(pile) if pile else 0
 
         agent_score = self.bot.get_victory_points()
-        opp_scores = [
-            p.get_victory_points() for p in self.game.get_opponents(self.bot)
-        ]
-        best_opp = max(opp_scores) if opp_scores else 0
+        opponent_score = self.opponent.get_victory_points()
 
         return {
             "coins_available": money,
             "buys_available": self.bot.state.buys,
             "score_rl": agent_score,
-            "score_opp": best_opp,
-            "score_diff": agent_score - best_opp,
+            "score_opp": opponent_score,
+            "score_diff": agent_score - opponent_score,
             "affordable": affordable,
             "supply_remaining": supply_remaining,
             "deck_size_rl": self._player_owned_card_count(self.bot),
@@ -298,13 +332,10 @@ class DominionBuyPhaseEnv(gym.Env):
         d = self._count_player_zone_cards(self.bot)
 
         # opponent zone cards: count of cards in deck + hand + discard aligned to card_names
-        od = np.zeros(len(self.card_names), dtype=np.float32)
-        if self.opponent_bots and len(self.opponent_bots) == 1:
-            opponent = self.opponent_bots[0]
-            od = self._count_player_zone_cards(opponent)
+        od = self._count_player_zone_cards(self.opponent)
 
 
-        # scalars: actions, buys, money, turn number, current score diff (agent vs best opponent),
+        # scalars: actions, buys, money, turn number, current score diff (agent vs opponent),
         # count of cards in deck + hand + discard
 
         scalars = np.array(

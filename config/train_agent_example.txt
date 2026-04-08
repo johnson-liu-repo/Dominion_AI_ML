@@ -11,7 +11,10 @@ Top-level fields
   RNG seed used when constructing the environment.
 
 - opponent_bots
-  List of scripted opponent names. Current supported examples in the code:
+  List of scripted opponent names.
+  The training code currently requires this list to contain exactly one entry,
+  so games are always 2-player: the RL agent and one scripted opponent.
+  Current supported examples in the code:
   - BigMoney
   - BigMoneyUltimate
 

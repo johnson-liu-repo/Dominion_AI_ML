@@ -7,9 +7,12 @@ from gymnasium import spaces
 
 from pyminion_master.pyminion.core import CardType
 
+# --------------------------------------------------------------------- #
+# For logging and debugging.
+# --------------------------------------------------------------------- #
 # from agent_rl.logging_utils import get_train_logger
-
 # logger = get_train_logger()
+# --------------------------------------------------------------------- #
 
 
 class DominionBuyPhaseEnv(gym.Env):
@@ -41,27 +44,29 @@ class DominionBuyPhaseEnv(gym.Env):
                 "DominionBuyPhaseEnv requires both the RL agent and the "
                 "configured opponent to be present in game.players."
             )
-        self.card_names    = card_names          # Ordered list of card types encoded in
-                                                 # the action/observation vectors.
-                                                 # (In current training this includes
-                                                 # base treasure, victory, curse,
-                                                 # and action card names, not just
-                                                 # kingdom cards.)
-        self.pass_idx      = len(card_names)     # final index is "pass / buy nothing"
+                                                 # ---------------------------------------- #
+        self.card_names    = card_names          # Ordered list of card types encoded in -- #
+                                                 # the action/observation vectors. -------- #
+                                                 # (In current training this includes ----- #
+                                                 # base treasure, victory, curse, --------- #
+                                                 # and action card names, not just -------- #
+                                                 # kingdom cards.) ------------------------ #
+        self.pass_idx      = len(card_names)     # final index is "pass / buy nothing" ---- #
+                                                 # ---------------------------------------- #
 
         n = len(card_names)
-        self.action_space = spaces.Discrete(n + 1)                  # 0..n  (n==pass)
+        self.action_space = spaces.Discrete(n + 1)   # 0..n  (n==pass)
         self.observation_space = spaces.Box(
             low=-100,
             high=100,
-            shape=(4 * n + 6,),  #######################################################
-                                 # n is len(card_names), meaning the number of
-                                 # card types represented in the action and
-                                 # observation encoding. In the current setup,
-                                 # card_names includes base treasure, victory,
-                                 # curse, and action card names, even though
-                                 # only some of those piles may actually be
-                                 # present in the match supply.
+            shape=(4 * n + 6,),  ########################################################
+                                 # n is len(card_names), meaning the number of          #
+                                 # card types represented in the action and             #
+                                 # observation encoding. In the current setup,          #
+                                 # card_names includes base treasure, victory,          #
+                                 # curse, and action card names, even though            #
+                                 # only some of those piles may actually be             #
+                                 # present in the match supply.                         #
                                  ########################################################
                                  # 4 n-length card-count vectors:
                                  # ======================================================
@@ -112,15 +117,21 @@ class DominionBuyPhaseEnv(gym.Env):
             dtype=np.float32,
         )
 
-        # internal flags
+        # ------------------------------------------------------------------ #
+        # Some rewards ( others defined in _apply_buy() ) ------------------ #
+        # ------------------------------------------------------------------ #
+        self.illegal_reward = -10.0
+        self.pass_reward = -0.01
+
+        # --- internal flags ----------------------------------------------- #
         self._done  = False
         self._turn  = 0
         self.turn_events = []
         self._agent_hand_snapshot = None
 
-    # --------------------------------------------------------------------- #
-    #  Public API                                                           #
-    # --------------------------------------------------------------------- #
+    # ---------------------------------------------------------------------- #
+    #  Public API                                                            #
+    # ---------------------------------------------------------------------- #
     def reset(self, *, seed=None, options=None):
         """Reset the underlying game and return the initial observation."""
         super().reset(seed=seed)
@@ -131,6 +142,8 @@ class DominionBuyPhaseEnv(gym.Env):
         self._start_new_turn()              # plays start-action & treasure phase
         return self._obs(), {}
 
+    # ---------------------------------------------------------------------- #
+
     def step(self, action: int):
         """Apply a buy action and advance the game by one full turn."""
         assert self.action_space.contains(action), "invalid action index"
@@ -138,18 +151,18 @@ class DominionBuyPhaseEnv(gym.Env):
         # self.bot.start_buy_phase(self.game)
         reward, _ = self._apply_buy(action)
 
-        # --- wrap up the turn -------------------------------------------- #
+        # --- wrap up the turn --------------------------------------------- #
         self.bot.start_cleanup_phase(self.game)
         self.bot.end_turn(self.game)
 
-        # terminal check (province pile / empty-3) ------------------------- #
+        # --- terminal check (province pile / empty-3) --------------------- #
         if self.game.is_over():
             self._done = True
             info = self._terminal_info()
             reward += info["score_diff"] + 0.5 if info["won"] else -0.5 + info["score_diff"]
             return self._obs(), reward, True, info
 
-        # play opponents, if any ------------------------------------------ #
+        # --- play opponents, if any --------------------------------------- #
         self._play_opponents()
         if self.game.is_over():
             self._done = True
@@ -157,13 +170,14 @@ class DominionBuyPhaseEnv(gym.Env):
             reward += info["score_diff"] + 0.5 if info["won"] else -0.5 + info["score_diff"]
             return self._obs(), reward, True, info
 
-        # otherwise start next turn & return obs -------------------------- #
+        # --- otherwise start next turn & return obs ----------------------- #
         self._start_new_turn()
         return self._obs(), reward, False, {}
 
-    # --------------------------------------------------------------------- #
-    #  Internal helpers                                                     #
-    # --------------------------------------------------------------------- #
+    # ====================================================================================================== #
+    # ---------------------------------------------------------------------- #
+    #  Internal helpers                                                      #
+    # ---------------------------------------------------------------------- #
     def _start_new_turn(self):
         """Advance to the buy phase for the controlled agent."""
         self._turn += 1
@@ -175,6 +189,8 @@ class DominionBuyPhaseEnv(gym.Env):
         self.bot.start_treasure_phase(self.game)
 
         self.game.current_phase = self.game.Phase.Buy
+
+    # ---------------------------------------------------------------------- #
 
     def _play_opponents(self):
         """Play the single opponent turn before the next agent turn."""
@@ -197,6 +213,8 @@ class DominionBuyPhaseEnv(gym.Env):
         buy_names = [card.name for card in buys] if buys else ["PASS"]
         self._record_turn_event(opponent, hand_snapshot, buy_names, self._turn)
 
+    # ---------------------------------------------------------------------- #
+
     def _terminal_info(self):
         """Compute terminal win/loss metadata for logging and reward shaping."""
         agent_score = self.bot.get_victory_points()
@@ -210,38 +228,7 @@ class DominionBuyPhaseEnv(gym.Env):
             "score_diff": score_diff,
         }
 
-
-    # ---------- diagnostics snapshot --------------------------------------- #
-    def buy_phase_snapshot(self):
-        """Return a dict describing the current buy-phase state for diagnostics.
-
-        Must be called *before* env.step() so the state reflects pre-buy conditions.
-        """
-        money = self.bot.state.money
-        affordable = {}
-        supply_remaining = {}
-        for name in self.card_names:
-            pile = self._pile_for_card(name)
-            if pile and len(pile) > 0:
-                affordable[name] = pile.cards[0].base_cost.money <= money
-            else:
-                affordable[name] = False
-            supply_remaining[name] = len(pile) if pile else 0
-
-        agent_score = self.bot.get_victory_points()
-        opponent_score = self.opponent.get_victory_points()
-
-        return {
-            "coins_available": money,
-            "buys_available": self.bot.state.buys,
-            "score_rl": agent_score,
-            "score_opp": opponent_score,
-            "score_diff": agent_score - opponent_score,
-            "affordable": affordable,
-            "supply_remaining": supply_remaining,
-            "deck_size_rl": self._player_owned_card_count(self.bot),
-            "turn": self._turn,
-        }
+    # ---------------------------------------------------------------------- #
 
     # ---------- buy logic ------------------------------------------------- #
     def _apply_buy(self, action_idx: int):
@@ -255,17 +242,18 @@ class DominionBuyPhaseEnv(gym.Env):
         # logger.info(f"{self.bot.player_id} has chosen action index {action_idx}...")
         # logger.info(f"The cards are {self.card_names}...\n")
 
-        #  mask invalid indices
-        mask = self.valid_action_mask()
+        # mask invalid indices
+        mask = self._valid_action_mask()
         if mask[action_idx] == 0:
             # logger.debug(f"Buy phase: {self.bot.player_id} tried illegal action {action_idx} (turn {self._turn})")
             self._record_turn_event(self.bot, self._agent_hand_snapshot, ["ILLEGAL"], self._turn)
-            return -1000, False
+            return self.illegal_reward, False
 
-        if action_idx == self.pass_idx:         # no purchase
+        # no purchase
+        if action_idx == self.pass_idx:
             # logger.info(f"Buy phase: {self.bot.player_id} passed (turn {self._turn})")
             self._record_turn_event(self.bot, self._agent_hand_snapshot, ["PASS"], self._turn)
-            return -0.01, True
+            return self.pass_reward, True
 
         name = self.card_names[action_idx]
         pile = self._pile_for_card(name)
@@ -275,42 +263,6 @@ class DominionBuyPhaseEnv(gym.Env):
 
             self.bot.buy(pile.cards[0], self.game)
             # logger.info(f"Buy phase: {self.bot.player_id} bought {name} (turn {self._turn})")
-            reward = 0.0
-
-            # 
-            if CardType.Curse in card.type:
-                reward += -10
-
-            if CardType.Victory in card.type:
-                if "Estate" in card.name:
-                    reward += 1
-                elif "Duchy" in card.name:
-                    reward += 10
-                elif "Province" in card.name:
-                    # Count the number of empty piles as a proxy for game progress, since provinces are worth more late-game.
-                    empty_piles = sum(1 for pile in self.game.supply.piles if len(pile) == 0)
-                    if empty_piles == 0:
-                        # Count the number of cards left in the supply as a proxy for game progress, since provinces are worth more late-game.
-                        total_cards_left = sum(len(pile) for pile in self.game.supply.piles)
-                        if total_cards_left > 20:
-                            reward += 10
-                        else:
-                            reward += 100
-                    else:
-                        reward += 1000
-            
-            elif CardType.Treasure in card.type:
-                if "Copper" in card.name:
-                    reward += -1000
-                elif "Silver" in card.name:
-                    # Check to see if gold was available to buy and was affordable
-                    gold_pile = self._pile_for_card("Gold")
-                    if len(gold_pile) > 0 and gold_pile.cards[0].base_cost.money <= self.bot.state.money:
-                        reward += -1000
-                    else:
-                        reward += 100
-                elif "Gold" in card.name:
-                    reward += 1000
 
             # penalty for diluting the deck
             # penalty becomes larger as the deck grows, but is bounded by -1 for very large decks
@@ -323,10 +275,14 @@ class DominionBuyPhaseEnv(gym.Env):
 
         except Exception:                       # money / buys / empty pile
             self._record_turn_event(self.bot, self._agent_hand_snapshot, ["ILLEGAL"], self._turn)
-            return -1, False
+            return self.illegal_reward, False
 
-    # ---------- compute observables -------------------------------------- #
-    # ---------- OUTDATED ------------------------------------------------- #
+    # ---------- compute observables — shouldn't call these observables --- #
+    #                                  since the term "observables" is ---- #
+    #                                  used for RL agent training --------- #
+    # --------------------------------------------------------------------- #
+    # ---------- OUTDATED — saved here for posterity ---------------------- #
+    # --------------------------------------------------------------------- #
     # def _treasure_density(self):
     #     total_copper_cards = self._count_named_player_owned_card(self.bot, "Copper")
     #     total_silver_cards = self._count_named_player_owned_card(self.bot, "Silver")
@@ -349,6 +305,7 @@ class DominionBuyPhaseEnv(gym.Env):
         
     #     return victory_card_density
 
+    # ---------------------------------------------------------------------- #
 
     # ---------- observation + mask --------------------------------------- #
     def _obs(self):
@@ -381,7 +338,9 @@ class DominionBuyPhaseEnv(gym.Env):
 
         return np.concatenate([s, h, d, od, scalars])
 
-    def valid_action_mask(self):
+    # ---------------------------------------------------------------------- #
+
+    def _valid_action_mask(self):
         """
         A binary (n+1,) mask where 1 == legal.
         • Legal if pile non-empty and cost ≤ money and bot has buys.
@@ -405,18 +364,26 @@ class DominionBuyPhaseEnv(gym.Env):
         mask[self.pass_idx] = 1.0
         return mask
 
+    # ---------------------------------------------------------------------- #
+
     # ---------- util counts ---------------------------------------------- #
     def _player_zone_cards(self, player):
         """Return cards in the player's deck, hand, and discard pile only."""
         return list(player.deck.cards) + list(player.hand.cards) + list(player.discard_pile.cards)
 
+    # ---------------------------------------------------------------------- #
+
     def _player_zone_card_count(self, player):
         """Count the total number of cards in the player's deck, hand, and discard pile."""
         return len(player.deck.cards) + len(player.hand.cards) + len(player.discard_pile.cards)
 
+    # ---------------------------------------------------------------------- #
+
     def _player_owned_card_count(self, player):
         """Count the total number of cards the player owns across all zones."""
         return player.get_all_cards_count()
+
+    # ---------------------------------------------------------------------- #
 
     def _count_deck(self, cards):
         """Count card occurrences in a list of cards aligned to card_names."""
@@ -433,13 +400,19 @@ class DominionBuyPhaseEnv(gym.Env):
                 cnt[idx] += 1
         return cnt
 
+    # ---------------------------------------------------------------------- #
+
     def _count_player_zone_cards(self, player):
         """Count card occurrences across deck, hand, and discard only."""
         return self._count_deck(self._player_zone_cards(player))
 
+    # ---------------------------------------------------------------------- #
+
     def _count_player_owned_cards(self, player):
         """Count card occurrences across all cards the player currently owns."""
         return self._count_deck(player.get_all_cards())
+
+    # ---------------------------------------------------------------------- #
 
     def _count_named_card(self, counts, name):
         """Safely read a named card count from a count vector."""
@@ -448,13 +421,19 @@ class DominionBuyPhaseEnv(gym.Env):
         except ValueError:
             return 0.0
 
+    # ---------------------------------------------------------------------- #
+
     def _count_named_player_zone_card(self, player, name):
         """Count a specific named card across deck, hand, and discard only."""
         return self._count_named_card(self._count_player_zone_cards(player), name)
 
+    # ---------------------------------------------------------------------- #
+
     def _count_named_player_owned_card(self, player, name):
         """Count a specific named card across all owned zones."""
         return self._count_named_card(self._count_player_owned_cards(player), name)
+
+    # ---------------------------------------------------------------------- #
 
     def _count_supply(self):
         """Count remaining cards in each supply pile."""
@@ -464,6 +443,8 @@ class DominionBuyPhaseEnv(gym.Env):
             if pile is not None:
                 cnt[i] = len(pile)
         return cnt
+
+    # ---------------------------------------------------------------------- #
 
     def _pile_for_card(self, name: str):
         """Find the supply pile corresponding to `name`."""
@@ -475,6 +456,8 @@ class DominionBuyPhaseEnv(gym.Env):
                 return pile
         return None
 
+    # ---------------------------------------------------------------------- #
+
     def _record_turn_event(self, player, hand_snapshot, buys, turn):
         self.turn_events.append({
             "turn": int(turn),
@@ -483,7 +466,43 @@ class DominionBuyPhaseEnv(gym.Env):
             "buys": list(buys) if buys else [],
         })
 
+    # ---------------------------------------------------------------------- #
+
     def consume_turn_events(self):
         events = self.turn_events
         self.turn_events = []
         return events
+
+    # ---------------------------------------------------------------------- #
+
+    # --- diagnostics snapshot ---------------------------------------------- #
+    def buy_phase_snapshot(self):
+        """Return a dict describing the current buy-phase state for diagnostics.
+
+        Must be called *before* env.step() so the state reflects pre-buy conditions.
+        """
+        money = self.bot.state.money
+        affordable = {}
+        supply_remaining = {}
+        for name in self.card_names:
+            pile = self._pile_for_card(name)
+            if pile and len(pile) > 0:
+                affordable[name] = pile.cards[0].base_cost.money <= money
+            else:
+                affordable[name] = False
+            supply_remaining[name] = len(pile) if pile else 0
+
+        agent_score = self.bot.get_victory_points()
+        opponent_score = self.opponent.get_victory_points()
+
+        return {
+            "coins_available": money,
+            "buys_available": self.bot.state.buys,
+            "score_rl": agent_score,
+            "score_opp": opponent_score,
+            "score_diff": agent_score - opponent_score,
+            "affordable": affordable,
+            "supply_remaining": supply_remaining,
+            "deck_size_rl": self._player_owned_card_count(self.bot),
+            "turn": self._turn,
+        }

@@ -103,6 +103,12 @@ class DominionBuyPhaseEnv(gym.Env):
                                  #     opponent.
                                  # 10. The total number of cards in the agent's 
                                  #     deck/hand/discard zones.
+                                 # ======================================================
+                                 # Notes:
+                                 # - Should we include the total number of cards in the
+                                 #   opponent's zones?
+                                 # - What other state info would be useful to include
+                                 #   in the observation vector?
             dtype=np.float32,
         )
 
@@ -140,7 +146,7 @@ class DominionBuyPhaseEnv(gym.Env):
         if self.game.is_over():
             self._done = True
             info = self._terminal_info()
-            reward += info["score_diff"] + 0.5 if info["won"] else -0.5
+            reward += info["score_diff"] + 0.5 if info["won"] else -0.5 + info["score_diff"]
             return self._obs(), reward, True, info
 
         # play opponents, if any ------------------------------------------ #
@@ -148,7 +154,7 @@ class DominionBuyPhaseEnv(gym.Env):
         if self.game.is_over():
             self._done = True
             info = self._terminal_info()
-            reward += info["score_diff"]
+            reward += info["score_diff"] + 0.5 if info["won"] else -0.5 + info["score_diff"]
             return self._obs(), reward, True, info
 
         # otherwise start next turn & return obs -------------------------- #
@@ -254,7 +260,7 @@ class DominionBuyPhaseEnv(gym.Env):
         if mask[action_idx] == 0:
             # logger.debug(f"Buy phase: {self.bot.player_id} tried illegal action {action_idx} (turn {self._turn})")
             self._record_turn_event(self.bot, self._agent_hand_snapshot, ["ILLEGAL"], self._turn)
-            return -0.1, False
+            return -1000, False
 
         if action_idx == self.pass_idx:         # no purchase
             # logger.info(f"Buy phase: {self.bot.player_id} passed (turn {self._turn})")
@@ -273,14 +279,38 @@ class DominionBuyPhaseEnv(gym.Env):
 
             # 
             if CardType.Curse in card.type:
-                reward += -1
+                reward += -10
 
             if CardType.Victory in card.type:
-                reward += self._victory_card_density()
+                if "Estate" in card.name:
+                    reward += 1
+                elif "Duchy" in card.name:
+                    reward += 10
+                elif "Province" in card.name:
+                    # Count the number of empty piles as a proxy for game progress, since provinces are worth more late-game.
+                    empty_piles = sum(1 for pile in self.game.supply.piles if len(pile) == 0)
+                    if empty_piles == 0:
+                        # Count the number of cards left in the supply as a proxy for game progress, since provinces are worth more late-game.
+                        total_cards_left = sum(len(pile) for pile in self.game.supply.piles)
+                        if total_cards_left > 20:
+                            reward += 10
+                        else:
+                            reward += 100
+                    else:
+                        reward += 1000
             
             elif CardType.Treasure in card.type:
-                reward += self._treasure_density()
-
+                if "Copper" in card.name:
+                    reward += -1000
+                elif "Silver" in card.name:
+                    # Check to see if gold was available to buy and was affordable
+                    gold_pile = self._pile_for_card("Gold")
+                    if len(gold_pile) > 0 and gold_pile.cards[0].base_cost.money <= self.bot.state.money:
+                        reward += -1000
+                    else:
+                        reward += 100
+                elif "Gold" in card.name:
+                    reward += 1000
 
             # penalty for diluting the deck
             # penalty becomes larger as the deck grows, but is bounded by -1 for very large decks
@@ -296,27 +326,28 @@ class DominionBuyPhaseEnv(gym.Env):
             return -1, False
 
     # ---------- compute observables -------------------------------------- #
-    def _treasure_density(self):
-        total_copper_cards = self._count_named_player_owned_card(self.bot, "Copper")
-        total_silver_cards = self._count_named_player_owned_card(self.bot, "Silver")
-        total_gold_cards = self._count_named_player_owned_card(self.bot, "Gold")
+    # ---------- OUTDATED ------------------------------------------------- #
+    # def _treasure_density(self):
+    #     total_copper_cards = self._count_named_player_owned_card(self.bot, "Copper")
+    #     total_silver_cards = self._count_named_player_owned_card(self.bot, "Silver")
+    #     total_gold_cards = self._count_named_player_owned_card(self.bot, "Gold")
 
-        total_treasure_cards = total_copper_cards + total_silver_cards + total_gold_cards
+    #     total_treasure_cards = total_copper_cards + total_silver_cards + total_gold_cards
 
-        treasure_density = (total_silver_cards + 3*total_gold_cards)/total_treasure_cards if total_treasure_cards > 0 else 0.0
+    #     treasure_density = (total_silver_cards + 3*total_gold_cards)/total_treasure_cards if total_treasure_cards > 0 else 0.0
         
-        return treasure_density
+    #     return treasure_density
     
-    def _victory_card_density(self):
-        total_estate_cards = self._count_named_player_owned_card(self.bot, "Estate")
-        total_duchy_cards = self._count_named_player_owned_card(self.bot, "Duchy")
-        total_province_cards = self._count_named_player_owned_card(self.bot, "Province")
+    # def _victory_card_density(self):
+    #     total_estate_cards = self._count_named_player_owned_card(self.bot, "Estate")
+    #     total_duchy_cards = self._count_named_player_owned_card(self.bot, "Duchy")
+    #     total_province_cards = self._count_named_player_owned_card(self.bot, "Province")
 
-        total_victory_cards = total_estate_cards + total_duchy_cards + total_province_cards
+    #     total_victory_cards = total_estate_cards + total_duchy_cards + total_province_cards
 
-        victory_card_density = (total_duchy_cards + 3*total_province_cards)/total_victory_cards if total_victory_cards > 0 else 0.0
+    #     victory_card_density = (total_duchy_cards + 3*total_province_cards)/total_victory_cards if total_victory_cards > 0 else 0.0
         
-        return victory_card_density
+    #     return victory_card_density
 
 
     # ---------- observation + mask --------------------------------------- #

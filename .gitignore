@@ -21,3 +21,4 @@ data/*
 .claude
 claude/*
 codex/*
+config/train_agent.json

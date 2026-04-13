@@ -602,5 +602,5 @@ In short, it is not yet the final architecture for full Dominion mastery, but it
 
 ---
 
-![Test image 2](test_02.png)
-![Test image 3](test_03.png)
+<!-- ![Test image 2](test_02.png) -->
+<!-- ![Test image 3](test_03.png) -->

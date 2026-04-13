@@ -599,3 +599,8 @@ The current design is a pragmatic baseline for Dominion buy-phase RL because it 
 - rich artifact logging (analysis-first workflow)
 
 In short, it is not yet the final architecture for full Dominion mastery, but it is a strong and extensible baseline for iterative research on buy-phase policy quality, reward shaping, and deck-building dynamics.
+
+---
+
+![Test image 2](test_02.png)
+![Test image 3](test_03.png)

@@ -14,6 +14,64 @@ Email: [liujohnson.jl@gmail.com](mailto:liujohnson.jl@gmail.com)
 
 ---
 
+## Table of Contents
+
+- [Project Overview](#project-overview)
+  - [Goal](#goal)
+  - [Current Progress](#current-progress)
+  - [Future Plans](#future-plans)
+- [General Structure](#general-structure)
+- [Some notes](#some-notes)
+- [Module Relationships & Data Flow](#module-relationships--data-flow)
+  - [Dependency Graph (ASCII Diagram)](#dependency-graph-ascii-diagram)
+  - [Module Relationship Table](#module-relationship-table)
+  - [Data Flow Pipeline](#data-flow-pipeline)
+  - [Output Artifact Structure](#output-artifact-structure)
+- [Diagnostics](#diagnostics)
+  - [Enable diagnostics](#enable-diagnostics)
+  - [Diagnostics outputs](#diagnostics-outputs)
+  - [Generate the plots and report](#generate-the-plots-and-report)
+  - [Interpreting small runs](#interpreting-small-runs)
+- [Design Decisions (potentially outdated section)](#design-decisions-potentially-outdated-section)
+- [Detailed DQN Structure Overview (Comprehensive)](#detailed-dqn-structure-overview-comprehensive)
+  - [DQN Structure (at a glance)](#dqn-structure-at-a-glance)
+  - [1) Learning Setup: What the Agent Actually Learns](#1-learning-setup-what-the-agent-actually-learns)
+  - [2) State (Observation) Structure](#2-state-observation-structure)
+  - [3) Action-Space Constraints via Legal Masking](#3-action-space-constraints-via-legal-masking)
+  - [4) Network Architecture: Dueling DQN MLP](#4-network-architecture-dueling-dqn-mlp)
+  - [5) Exploration Strategy](#5-exploration-strategy)
+  - [6) Replay Buffer and Off-Policy Learning](#6-replay-buffer-and-off-policy-learning)
+  - [7) Target Computation: Double DQN with Masked Argmax](#7-target-computation-double-dqn-with-masked-argmax)
+  - [8) Optimization and Stability Mechanisms](#8-optimization-and-stability-mechanisms)
+  - [9) Reward Composition and Learning Signal](#9-reward-composition-and-learning-signal)
+  - [10) Temporal Granularity and Credit Assignment](#10-temporal-granularity-and-credit-assignment)
+  - [11) Logging, Checkpointing, and Diagnostics Integration](#11-logging-checkpointing-and-diagnostics-integration)
+  - [12) Why This DQN Design Fits the Current Project Stage](#12-why-this-dqn-design-fits-the-current-project-stage)
+
+---
+
+## Project Overview
+
+### Goal
+
+Create a framework to train reinforcement learning agents to play Dominion.
+
+### Current Progress
+
+- **Environment**: Dominion game environment built on top of Pyminion (`dominion_env.py`, `dominion_env_factory.py`, `wrappers.py`)
+- **Agents**: Includes `DummieBot` baseline and early DQN agent implementations (`train_dqn.py`)
+- **Training I/O**: Full logging pipeline (`training_io.py`) with checkpoints, metrics, and turn events
+
+### Future Plans
+
+- Train robust DQN agents that outperform scripted baselines
+- Experiment with curriculum learning (start with basic cards, progressively add complexity)
+- Extend to multi-phase agents (action + buy decision-making)
+- Compare shared vs. separate models for multi-phase learning
+- Evaluate agent performance using custom metrics and comparisons to human-style strategies
+
+---
+
 ## General Structure
 
 The repository is organized around a small RL stack layered on top of a bundled copy of Pyminion:
@@ -270,62 +328,26 @@ Short runs produce noisy metrics. With very small numbers of episodes, rolling d
 
 ---
 
-## Design Decisions
+## Design Decisions (potentially outdated section)
 
 ### 1. Single-Player Simplification
 
 We treat Dominion as a single-player optimization problem (the RL agent plays against a fixed scripted opponent). This simplifies game state representation and agent training.
 
-**Rationale**: Eliminates need to model opponent behavior; focuses learning on agent's buy/action strategy against a known opponent.
+This eliminates need to model opponent behavior; focuses learning on agent's buy/action strategy against a known opponent.
 
-### 2. Fixed vs. Dynamic Action Space
-
-**Fixed Action Space (Chosen):**
-- One action per card in supply + one "pass" action
-- Size remains constant throughout an episode
-
-| Aspect | Benefit | Cost |
-|--------|---------|------|
-| **Framework Compatibility** | DQN and most RL algorithms require fixed output size | Wastes action space early (many masks) |
-| **Masked Learning** | Agent learns not to select invalid actions via masking + penalty | Slower convergence without careful reward shaping |
-| **Implementation** | Simple to implement; no custom infrastructure | Requires robust invalid-action masking at every step |
-
-**Dynamic Action Space (Alternative, not chosen):**
-- Only expose valid actions at each state
-- **Pros**: No wasted actions, faster exploration. **Cons**: Breaks DQN (requires variable output size); needs custom infrastructure.
-
-### 3. Buy-Phase Only vs. Multi-Phase Agent
+### 2. Buy-Phase Only vs. Multi-Phase Agent
 
 **Current**: Buy-phase only
 - Simplifies observation/action space
 - RL agent sees buying decisions; internal turn automation handles action/treasure/cleanup phases
 
-**Future**: Multi-phase agent (optional)
+**Future**: Multi-phase agent
 - Extend `DominionBuyPhaseEnv` to `DominionFullEnv` that exposes action phase
 - Share or separate Q-networks between action and buy phases
 - Options: multi-headed network, phase-encoded observation, or separate models with curriculum learning
 
-### 4. Reward Shaping
-
-Observation: Raw terminal reward (final score difference) is sparse and leads to slow learning.
-
-**Solution**: Shaped reward combining:
-- Immediate reward: coins acquired during buy phase
-- Terminal reward: final score - opponent score (scaled)
-- Win bonus: +positive reward on victory
-
-This accelerates learning without undermining long-term goals.
-
-### 5. Checkpointing & Resumption
-
-Training saves periodic checkpoints to `checkpoints/` directory:
-- `checkpoint_latest.pt`: resumable state (model weights + optimizer)
-- `checkpoint_best.pt`: highest performance (for inference)
-- `checkpoint_XXXXX.pt`: snapshots at intervals
-
-Enables long training runs that can be paused and resumed.
-
-### 6. Separate Models vs. Shared Model (Action + Buy Phases)
+### 3. Separate Models vs. Shared Model (Action + Buy Phases)
 
 If extending to multi-phase agents, options include:
 
@@ -336,34 +358,10 @@ If extending to multi-phase agents, options include:
 | **Phase-encoded single network** | Single model handles both phases; phase signal in observation | All outputs must have consistent size; less modular |
 | **Curriculum learning** | Train separate models first, then fine-tune joint model | Multi-stage training; more bookkeeping |
 
-**Recommendation**: Start with separate models for clarity. If memory/time is tight, move to multi-headed architecture.
 
 ---
 
-
-## Project Overview
-
-### Goal
-
-Create a framework to train reinforcement learning agents to play Dominion.
-
-### Current Progress
-
-- **Environment**: Dominion game environment built on top of Pyminion (`dominion_env.py`, `dominion_env_factory.py`, `wrappers.py`)
-- **Agents**: Includes `DummieBot` baseline and early DQN agent implementations (`train_dqn.py`)
-- **Training I/O**: Full logging pipeline (`training_io.py`) with checkpoints, metrics, and turn events
-
-### Future Plans
-
-- Train robust DQN agents that outperform scripted baselines
-- Experiment with curriculum learning (start with basic cards, progressively add complexity)
-- Extend to multi-phase agents (action + buy decision-making)
-- Compare shared vs. separate models for multi-phase learning
-- Evaluate agent performance using custom metrics and comparisons to human-style strategies
-
----
-
-## Detailed DQN Structure Overview (Comprehensive)
+## Detailed DQN Structure Overview
 
 This section provides a deeper technical breakdown of the DQN implementation used in `src/agent_rl/train_dqn.py` and how it interacts with the buy-phase environment.
 

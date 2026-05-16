@@ -19,7 +19,13 @@ blah blah blah
 ### Sequential Decision Making
 
 Given states $S_t$ at time $t$, future states $S_{t+1}$, the rewards $R_t$ for state transitions, and the actions $A_t$ that map $S_t$ into $S_{t+1}$, the reinforcement agent seeks to maximize its return
-$$\begin{aligned} G_t &= R_{t+1} + \gamma R_{t+2} + \gamma^2 R_{t+3} + \ldots \\ G_t &= \sum_{k=0}^{\infty} \gamma^k R_{t+k+1} \end{aligned}$$
+
+$$
+\begin{aligned}
+G_t &= R_{t+1} + \gamma R_{t+2} + \gamma^2 R_{t+3} + \ldots \\
+G_t &= \sum_{k=0}^{\infty} \gamma^k R_{t+k+1}
+\end{aligned}
+$$
 
 
 
